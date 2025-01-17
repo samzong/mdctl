@@ -1,57 +1,59 @@
 # mdctl
 
-一个用于处理 Markdown 文件的命令行工具。目前支持自动下载远程图片到本地，并更新 Markdown 文件中的图片引用路径。
+[中文版](README_zh.md)
 
-## 功能特点
+A command-line tool for processing Markdown files. Currently, it supports automatically downloading remote images to local storage and updating the image references in Markdown files.
 
-- 支持处理单个 Markdown 文件或整个目录（包括子目录）
-- 自动下载远程图片到本地指定目录
-- 保持原有图片文件名（如果可用）
-- 自动处理重名文件
-- 使用相对路径更新 Markdown 文件中的图片引用
-- 详细的处理日志输出
+## Features
 
-## 安装
+- Supports processing individual Markdown files or entire directories (including subdirectories).
+- Automatically downloads remote images to a specified local directory.
+- Preserves original image filenames (where available).
+- Handles duplicate filenames automatically.
+- Updates image references in Markdown files using relative paths.
+- Provides detailed processing logs.
+
+## Installation
 
 ```bash
 go install github.com/samzong/mdctl@latest
 ```
 
-## 使用方法
+## Usage
 
-### 下载远程图片
+### Downloading Remote Images
 
-处理单个文件：
+Processing a single file:
 ```bash
 mdctl download -f path/to/your/file.md
 ```
 
-处理整个目录：
+Processing an entire directory:
 ```bash
 mdctl download -d path/to/your/directory
 ```
 
-指定图片输出目录：
+Specifying an output directory for images:
 ```bash
 mdctl download -f path/to/your/file.md -o path/to/images
 ```
 
-## 命令说明
+## Command Reference
 
-### download 命令
+### `download` Command
 
-下载并本地化 Markdown 文件中的远程图片。
+Downloads and localizes remote images in Markdown files.
 
-参数：
-- `-f, --file`: 指定要处理的 Markdown 文件
-- `-d, --dir`: 指定要处理的目录（将递归处理所有 Markdown 文件）
-- `-o, --output`: 指定图片保存的目录（可选）
-  - 文件模式下默认保存在文件所在目录的 `images` 子目录中
-  - 目录模式下默认保存在目录下的 `images` 子目录中
+Parameters:
+- `-f, --file`: Specifies the Markdown file to process.
+- `-d, --dir`: Specifies the directory to process (recursively processes all Markdown files).
+- `-o, --output`: Specifies the directory for saving images (optional).
+  - Default: `images` subdirectory within the file's directory (file mode).
+  - Default: `images` subdirectory within the specified directory (directory mode).
 
-## 注意事项
+## Notes
 
-1. 不能同时指定 `-f` 和 `-d` 参数
-2. 如果不指定输出目录，工具会自动创建默认的 `images` 目录
-3. 工具只会处理远程图片（http/https），本地图片引用不会被修改
-4. 图片文件名会保持原有名称，如果发生重名，会自动添加 URL 的哈希值作为后缀 
+1. `-f` and `-d` parameters cannot be specified simultaneously.
+2. If no output directory is specified, the tool will automatically create a default `images` directory.
+3. The tool processes only remote images (http/https); local image references are not modified.
+4. Image filenames are preserved; if duplicates are encountered, the URL's hash value is appended as a suffix.
