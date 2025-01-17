@@ -1,6 +1,6 @@
 # mdctl
 
-一个用于处理 Markdown 文件中远程图片的命令行工具。它可以自动下载远程图片到本地，并更新 Markdown 文件中的图片引用路径。
+一个用于处理 Markdown 文件的命令行工具。目前支持自动下载远程图片到本地，并更新 Markdown 文件中的图片引用路径。
 
 ## 功能特点
 
@@ -19,26 +19,30 @@ go install github.com/samzong/mdctl@latest
 
 ## 使用方法
 
-### 处理单个文件
+### 下载远程图片
 
+处理单个文件：
 ```bash
-mdctl -f path/to/your/file.md
+mdctl download -f path/to/your/file.md
 ```
 
-### 处理整个目录
-
+处理整个目录：
 ```bash
-mdctl -d path/to/your/directory
+mdctl download -d path/to/your/directory
 ```
 
-### 指定图片输出目录
-
+指定图片输出目录：
 ```bash
-mdctl -f path/to/your/file.md -o path/to/image/directory
+mdctl download -f path/to/your/file.md -o path/to/images
 ```
 
-## 命令行参数
+## 命令说明
 
+### download 命令
+
+下载并本地化 Markdown 文件中的远程图片。
+
+参数：
 - `-f, --file`: 指定要处理的 Markdown 文件
 - `-d, --dir`: 指定要处理的目录（将递归处理所有 Markdown 文件）
 - `-o, --output`: 指定图片保存的目录（可选）
