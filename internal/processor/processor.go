@@ -69,6 +69,10 @@ func (p *Processor) processFile(filePath string) error {
 		imgAlt := match[1]
 		imgURL := match[2]
 
+		// 替换图片URL开头"//"为"https://"
+		if strings.HasPrefix(imgURL, "//") {
+			imgURL = strings.Replace(imgURL, "//", "https://", 1)
+		}
 		// 跳过本地图片
 		if !strings.HasPrefix(imgURL, "http://") && !strings.HasPrefix(imgURL, "https://") {
 			continue
@@ -89,7 +93,7 @@ func (p *Processor) processFile(filePath string) error {
 		}
 
 		// 替换图片链接
-		oldLink := fmt.Sprintf("![%s](%s)", imgAlt, imgURL)
+		oldLink := fmt.Sprintf("![%s](%s)", match[1], match[2])
 		newLink := fmt.Sprintf("![%s](%s)", imgAlt, relPath)
 		newContent = strings.Replace(newContent, oldLink, newLink, 1)
 	}
