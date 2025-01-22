@@ -185,6 +185,12 @@ func getFilenameFromURL(url string, resp *http.Response) string {
 		if idx := strings.Index(filename, "?"); idx != -1 {
 			filename = filename[:idx]
 		}
+		// 移除尾部多余字符 "@"
+		if idx := strings.LastIndex(filename, "@"); idx != -1 {
+			if idx > strings.LastIndex(filename, ".") {
+				filename = filename[:idx]
+			}
+		}
 		if filename != "" {
 			return filename
 		}
