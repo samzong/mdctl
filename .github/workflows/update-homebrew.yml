@@ -1,0 +1,30 @@
+name: Update Homebrew Tap
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to update (with v prefix)'
+        required: true
+        type: string
+  repository_dispatch:
+    types: [trigger-homebrew-update]
+
+jobs:
+  update-homebrew:
+    runs-on: macos-latest
+    steps:
+    - name: Set version
+      run: |
+        VERSION="${{ github.event.client_payload.version || inputs.version }}"
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Update Homebrew Formula
+      env:
+        GH_PAT: ${{ secrets.GH_PAT }}
+      run: make update-homebrew
