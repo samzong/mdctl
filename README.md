@@ -1,6 +1,8 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # mdctl
 
-[中文版](README_zh.md)
+[English](README.md) | [中文版](README_zh.md)
 
 A command-line tool for processing Markdown files. Currently, it supports automatically downloading remote images to local storage and updating the image references in Markdown files.
 
@@ -14,6 +16,15 @@ A command-line tool for processing Markdown files. Currently, it supports automa
 - Provides detailed processing logs.
 
 ## Installation
+
+use Homebrew to install mdctl. Follow the [Homebrew Installation Guide](https://brew.sh/) to install Homebrew.
+
+```bash
+brew tap samzong/tap
+brew install samzong/tap/mdctl
+```
+
+or use go to install mdctl.
 
 ```bash
 go install github.com/samzong/mdctl@latest

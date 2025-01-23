@@ -1,6 +1,8 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # mdctl
 
-[English Version](README.md)
+[English Version](README.md) | [中文版](README_zh.md)
 
 一个用于处理 Markdown 文件的命令行工具。目前支持自动下载远程图片到本地，并更新 Markdown 文件中的图片引用路径。
 
@@ -14,6 +16,16 @@
 - 详细的处理日志输出
 
 ## 安装
+
+
+使用 Homebrew 安装 mdctl。请参考 [Homebrew 安装指南](https://brew.sh/) 安装 Homebrew。
+
+```bash
+brew tap samzong/tap
+brew install samzong/tap/mdctl
+```
+
+或者使用 go 安装 mdctl。
 
 ```bash
 go install github.com/samzong/mdctl@latest
