@@ -3,12 +3,8 @@ name: Update Homebrew Tap
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version to update (with v prefix)'
-        required: true
-        type: string
       tag:
-        description: 'Tag to trigger the workflow'
+        description: 'Select the tag to update Homebrew'
         required: true
         type: string
   repository_dispatch:
@@ -20,10 +16,11 @@ jobs:
     steps:
     - name: Set version
       run: |
-        VERSION="${{ github.event.client_payload.version || inputs.version }}"
-        TAG="${{ github.event.inputs.tag }}"
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-        echo "TAG=$TAG" >> $GITHUB_ENV
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "VERSION=${{ inputs.tag }}" >> $GITHUB_ENV
+        else
+          echo "VERSION=${{ github.event.client_payload.version }}" >> $GITHUB_ENV
+        fi
 
     - name: Checkout repository
       uses: actions/checkout@v4
