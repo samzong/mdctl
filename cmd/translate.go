@@ -16,6 +16,7 @@ var (
 	toPath   string
 	locale   string
 	force    bool
+	format   bool
 )
 
 // 生成目标文件路径
@@ -53,6 +54,9 @@ Examples:
   # Force translate an already translated file
   mdctl translate -f README.md -l ko -F
 
+  # Format markdown content after translation
+  mdctl translate -f README.md -l zh -m
+
   # Translate to a specific output path
   mdctl translate -f docs -l fr -t translated_docs`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -88,14 +92,14 @@ Examples:
 		if fi.IsDir() {
 			// 如果是目录，且没有指定目标路径，则使用相同的目录结构
 			if toPath == "" {
-				return translator.ProcessDirectory(srcAbs, srcAbs, locale, cfg, force)
+				return translator.ProcessDirectory(srcAbs, srcAbs, locale, cfg, force, format)
 			}
 			// 如果指定了目标路径，使用指定的路径
 			dstAbs, err := filepath.Abs(toPath)
 			if err != nil {
 				return fmt.Errorf("failed to get absolute path: %v", err)
 			}
-			return translator.ProcessDirectory(srcAbs, dstAbs, locale, cfg, force)
+			return translator.ProcessDirectory(srcAbs, dstAbs, locale, cfg, force, format)
 		}
 
 		// 处理单个文件
@@ -111,11 +115,7 @@ Examples:
 			}
 		}
 
-		progress := &translator.Progress{
-			Total:   1,
-			Current: 0,
-		}
-		return translator.ProcessFile(srcAbs, dstAbs, locale, cfg, force, progress)
+		return translator.ProcessFile(srcAbs, dstAbs, locale, cfg, format)
 	},
 }
 
@@ -126,6 +126,7 @@ func init() {
 	translateCmd.Flags().StringVarP(&toPath, "to", "t", "", "Target file or directory path (optional, default: generate in same directory as source)")
 	translateCmd.Flags().StringVarP(&locale, "locales", "l", "", "Target language code (e.g., zh, en, ja, ko, fr, de, es, etc.)")
 	translateCmd.Flags().BoolVarP(&force, "force", "F", false, "Force translate even if already translated")
+	translateCmd.Flags().BoolVarP(&format, "format", "m", false, "Format markdown content after translation")
 
 	translateCmd.MarkFlagRequired("from")
 	translateCmd.MarkFlagRequired("locales")

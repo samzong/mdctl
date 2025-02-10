@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/samzong/mdctl/internal/config"
+	"github.com/samzong/mdctl/internal/markdownfmt"
 	"gopkg.in/yaml.v3"
 )
 
@@ -77,8 +78,26 @@ type Progress struct {
 	TargetFile string
 }
 
-func TranslateContent(content string, targetLang string, cfg *config.Config) (string, error) {
-	prompt := strings.Replace(cfg.TranslatePrompt, "{TARGET_LANG}", targetLang, 1)
+// Translator 翻译器结构体
+type Translator struct {
+	config *config.Config
+	format bool
+}
+
+// New 创建新的翻译器实例
+func New(cfg *config.Config, format bool) *Translator {
+	return &Translator{
+		config: cfg,
+		format: format,
+	}
+}
+
+// TranslateContent 翻译内容
+func (t *Translator) TranslateContent(content string, lang string) (string, error) {
+	// 移除可能存在的 front matter
+	content = removeFrontMatter(content)
+
+	prompt := strings.Replace(t.config.TranslatePrompt, "{TARGET_LANG}", lang, 1)
 
 	messages := []OpenAIMessage{
 		{Role: "system", Content: prompt},
@@ -86,10 +105,10 @@ func TranslateContent(content string, targetLang string, cfg *config.Config) (st
 	}
 
 	reqBody := OpenAIRequest{
-		Model:       cfg.ModelName,
+		Model:       t.config.ModelName,
 		Messages:    messages,
-		Temperature: cfg.Temperature,
-		TopP:        cfg.TopP,
+		Temperature: t.config.Temperature,
+		TopP:        t.config.TopP,
 	}
 
 	jsonData, err := json.Marshal(reqBody)
@@ -97,13 +116,13 @@ func TranslateContent(content string, targetLang string, cfg *config.Config) (st
 		return "", fmt.Errorf("failed to marshal request: %v", err)
 	}
 
-	req, err := http.NewRequest("POST", cfg.OpenAIEndpointURL+"/chat/completions", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", t.config.OpenAIEndpointURL+"/chat/completions", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %v", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+cfg.OpenAIAPIKey)
+	req.Header.Set("Authorization", "Bearer "+t.config.OpenAIAPIKey)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -117,178 +136,142 @@ func TranslateContent(content string, targetLang string, cfg *config.Config) (st
 		return "", fmt.Errorf("failed to read response: %v", err)
 	}
 
-	var openAIResp OpenAIResponse
-	if err := json.Unmarshal(body, &openAIResp); err != nil {
+	var response OpenAIResponse
+	if err := json.Unmarshal(body, &response); err != nil {
 		return "", fmt.Errorf("failed to parse response: %v\nResponse body: %s", err, string(body))
 	}
 
-	if len(openAIResp.Choices) == 0 {
+	if len(response.Choices) == 0 {
 		return "", fmt.Errorf("no translation result\nResponse body: %s", string(body))
 	}
 
-	return openAIResp.Choices[0].Message.Content, nil
+	// 获取翻译后的内容
+	translatedContent := response.Choices[0].Message.Content
+
+	// 移除可能的 markdown 代码块标记
+	translatedContent = strings.TrimPrefix(translatedContent, "```markdown\n")
+	translatedContent = strings.TrimSuffix(translatedContent, "\n```")
+	translatedContent = strings.TrimSpace(translatedContent)
+
+	// 如果启用了格式化，对翻译后的内容进行格式化
+	if t.format {
+		formatter := markdownfmt.New(true)
+		translatedContent = formatter.Format(translatedContent)
+	}
+
+	return translatedContent, nil
 }
 
-func ProcessFile(srcPath, dstPath string, targetLang string, cfg *config.Config, force bool, progress *Progress) error {
-	if progress != nil {
-		progress.SourceFile = filepath.Base(srcPath)
-		progress.TargetFile = filepath.Base(dstPath)
-		if progress.Total > 1 {
-			fmt.Printf("开始翻译 [%d/%d] %s...\n", progress.Current+1, progress.Total, progress.SourceFile)
-		} else {
-			fmt.Printf("开始翻译 %s...\n", progress.SourceFile)
+// removeFrontMatter 移除内容中的 front matter
+func removeFrontMatter(content string) string {
+	// 如果内容以 --- 开头，说明可能包含 front matter
+	trimmedContent := strings.TrimSpace(content)
+	if strings.HasPrefix(trimmedContent, "---") {
+		parts := strings.SplitN(trimmedContent, "---", 3)
+		if len(parts) >= 3 {
+			return strings.TrimSpace(parts[2])
+		}
+	}
+	return content
+}
+
+// ProcessFile 处理单个文件的翻译
+func ProcessFile(srcPath, dstPath, targetLang string, cfg *config.Config, format bool) error {
+	t := New(cfg, format)
+
+	// 检查目标路径是否是目录
+	dstInfo, err := os.Stat(dstPath)
+	if err == nil && dstInfo.IsDir() {
+		dstPath = filepath.Join(dstPath, filepath.Base(srcPath))
+	}
+
+	// 读取源文件内容
+	content, err := os.ReadFile(srcPath)
+	if err != nil {
+		return fmt.Errorf("failed to read source file: %v", err)
+	}
+
+	// 解析 front matter
+	var frontMatter map[string]interface{}
+	contentToTranslate := string(content)
+
+	// 检查并解析 front matter
+	if strings.HasPrefix(contentToTranslate, "---\n") {
+		parts := strings.SplitN(contentToTranslate[4:], "\n---\n", 2)
+		if len(parts) == 2 {
+			if err := yaml.Unmarshal([]byte(parts[0]), &frontMatter); err != nil {
+				return fmt.Errorf("failed to parse front matter: %v", err)
+			}
+			contentToTranslate = parts[1]
 		}
 	}
 
-	// 首先检查目标文件是否存在且已翻译
-	if !force {
-		if _, err := os.Stat(dstPath); err == nil {
-			// 目标文件存在，检查是否已翻译
-			dstContent, err := os.ReadFile(dstPath)
-			if err == nil {
-				parts := bytes.SplitN(dstContent, []byte("---"), 3)
-				if len(parts) == 3 {
-					existingMatter := make(map[string]interface{})
-					if len(bytes.TrimSpace(parts[1])) > 0 {
-						if err := yaml.Unmarshal(parts[1], &existingMatter); err == nil {
-							if translated, ok := existingMatter["translated"].(bool); ok && translated {
-								if progress != nil {
-									if progress.Total > 1 {
-										fmt.Printf("跳过 [%d/%d] %s (已翻译)\n", progress.Current+1, progress.Total, progress.SourceFile)
-									} else {
-										fmt.Printf("跳过 %s (已翻译)\n", progress.SourceFile)
-									}
-									progress.Current++
-								}
-								return nil
-							}
-						}
-					}
+	// 检查目标文件是否已经存在且已翻译
+	if _, err := os.Stat(dstPath); err == nil {
+		dstContent, err := os.ReadFile(dstPath)
+		if err != nil {
+			return fmt.Errorf("failed to read target file: %v", err)
+		}
+
+		var dstFrontMatter map[string]interface{}
+		if strings.HasPrefix(string(dstContent), "---\n") {
+			parts := strings.SplitN(string(dstContent)[4:], "\n---\n", 2)
+			if len(parts) == 2 {
+				if err := yaml.Unmarshal([]byte(parts[0]), &dstFrontMatter); err != nil {
+					return fmt.Errorf("failed to parse target file front matter: %v", err)
+				}
+				if translated, ok := dstFrontMatter["translated"].(bool); ok && translated {
+					// 目标文件已经翻译过，跳过
+					return nil
 				}
 			}
 		}
 	}
 
-	content, err := os.ReadFile(srcPath)
+	// 翻译内容
+	translatedContent, err := t.TranslateContent(contentToTranslate, targetLang)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to translate content: %v", err)
 	}
 
-	// 检查和更新 Front Matter
-	parts := bytes.SplitN(content, []byte("---"), 3)
-	if len(parts) == 3 {
-		// 初始化 map
-		existingMatter := make(map[string]interface{})
-
-		// 解析现有的 front matter（如果有的话）
-		if len(bytes.TrimSpace(parts[1])) > 0 {
-			if err := yaml.Unmarshal(parts[1], &existingMatter); err != nil {
-				return fmt.Errorf("failed to parse front matter: %v", err)
-			}
-		}
-
-		// 设置翻译标识
-		existingMatter["translated"] = true
-
-		// 重新生成 front matter
-		newFrontMatter, err := yaml.Marshal(existingMatter)
-		if err != nil {
-			return fmt.Errorf("failed to marshal front matter: %v", err)
-		}
-
-		translatedContent, err := TranslateContent(string(parts[2]), targetLang, cfg)
-		if err != nil {
-			return err
-		}
-
-		// 确保目标目录存在
-		if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil {
-			return err
-		}
-
-		// 写入新文件，保持原有格式
-		output := fmt.Sprintf("---\n%s---\n%s", string(newFrontMatter), translatedContent)
-		if err := os.WriteFile(dstPath, []byte(output), 0644); err != nil {
-			return err
-		}
-
-		if progress != nil {
-			if progress.Total > 1 {
-				fmt.Printf("✓ 完成翻译 [%d/%d] %s -> %s\n", progress.Current+1, progress.Total, progress.SourceFile, progress.TargetFile)
-			} else {
-				fmt.Printf("✓ 完成翻译 %s -> %s\n", progress.SourceFile, progress.TargetFile)
-			}
-			progress.Current++
-		}
-		return nil
+	// 更新 front matter
+	if frontMatter == nil {
+		frontMatter = make(map[string]interface{})
 	}
+	frontMatter["translated"] = true
 
-	// 如果没有 Front Matter，创建一个新的，只包含翻译标识
-	translatedContent, err := TranslateContent(string(content), targetLang, cfg)
-	if err != nil {
-		return err
-	}
-
-	// 创建新的 Front Matter
-	matter := map[string]interface{}{
-		"translated": true,
-	}
-	newFrontMatter, err := yaml.Marshal(matter)
+	// 生成新的文件内容
+	frontMatterBytes, err := yaml.Marshal(frontMatter)
 	if err != nil {
 		return fmt.Errorf("failed to marshal front matter: %v", err)
 	}
 
-	// 确保目标目录存在
+	newContent := fmt.Sprintf("---\n%s\n---\n\n%s", string(frontMatterBytes), translatedContent)
+
+	// 创建目标文件的目录（如果不存在）
 	if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil {
-		return err
+		return fmt.Errorf("failed to create target directory: %v", err)
 	}
 
-	// 写入新文件
-	output := fmt.Sprintf("---\n%s---\n%s", string(newFrontMatter), translatedContent)
-	if err := os.WriteFile(dstPath, []byte(output), 0644); err != nil {
-		return err
+	// 写入翻译后的内容到目标文件
+	if err := os.WriteFile(dstPath, []byte(newContent), 0644); err != nil {
+		return fmt.Errorf("failed to write target file: %v", err)
 	}
 
-	if progress != nil {
-		if progress.Total > 1 {
-			fmt.Printf("✓ 完成翻译 [%d/%d] %s -> %s\n", progress.Current+1, progress.Total, progress.SourceFile, progress.TargetFile)
-		} else {
-			fmt.Printf("✓ 完成翻译 %s -> %s\n", progress.SourceFile, progress.TargetFile)
-		}
-		progress.Current++
-	}
 	return nil
 }
 
-func ProcessDirectory(srcDir, dstDir string, targetLang string, cfg *config.Config, force bool) error {
-	// 首先统计需要处理的文件数量
-	var totalFiles int
-	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+// ProcessDirectory 处理目录中的所有 markdown 文件
+func ProcessDirectory(srcDir, dstDir string, targetLang string, cfg *config.Config, force bool, format bool) error {
+	// 确保源目录存在
+	if _, err := os.Stat(srcDir); os.IsNotExist(err) {
+		return fmt.Errorf("source directory does not exist: %s", srcDir)
+	}
+
+	// 遍历源目录
+	return filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
-		}
-		if !info.IsDir() && strings.HasSuffix(strings.ToLower(path), ".md") {
-			totalFiles++
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("正在扫描目录 [%s]...\n", srcDir)
-	fmt.Printf("找到 %d 个 Markdown 文件需要翻译\n", totalFiles)
-
-	progress := &Progress{
-		Total:   totalFiles,
-		Current: 0,
-	}
-
-	var errFiles []string // 记录处理失败的文件
-
-	err = filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return nil // 忽略单个文件的错误
 		}
 
 		// 跳过目录
@@ -297,50 +280,28 @@ func ProcessDirectory(srcDir, dstDir string, targetLang string, cfg *config.Conf
 		}
 
 		// 只处理 markdown 文件
-		if !strings.HasSuffix(strings.ToLower(path), ".md") {
+		ext := filepath.Ext(path)
+		if ext != ".md" {
 			return nil
 		}
 
-		// 计算目标文件路径
+		// 获取相对路径
 		relPath, err := filepath.Rel(srcDir, path)
 		if err != nil {
-			errFiles = append(errFiles, path)
-			fmt.Printf("⚠️ 错误: 处理文件 %s 失败: %v\n", path, err)
-			return nil
+			return fmt.Errorf("failed to get relative path: %v", err)
 		}
 
-		var dstPath string
-		// 如果源目录和目标目录相同，生成 name_lang.md 格式的文件
-		if srcDir == dstDir {
+		// 如果目标目录为空，在源文件所在目录创建翻译文件
+		if dstDir == "" {
 			dir := filepath.Dir(path)
 			base := filepath.Base(path)
-			ext := filepath.Ext(base)
 			nameWithoutExt := strings.TrimSuffix(base, ext)
-			dstPath = filepath.Join(dir, nameWithoutExt+"_"+targetLang+ext)
-		} else {
-			// 如果指定了不同的目标目录，使用指定的目录结构
-			dstPath = filepath.Join(dstDir, relPath)
+			dstPath := filepath.Join(dir, nameWithoutExt+"_"+targetLang+ext)
+			return ProcessFile(path, dstPath, targetLang, cfg, format)
 		}
 
-		if err := ProcessFile(path, dstPath, targetLang, cfg, force, progress); err != nil {
-			errFiles = append(errFiles, path)
-			fmt.Printf("⚠️ 错误: 处理文件 %s 失败: %v\n", path, err)
-		}
-		return nil
+		// 如果指定了不同的目标目录，使用指定的目录结构
+		dstPath := filepath.Join(dstDir, relPath)
+		return ProcessFile(path, dstPath, targetLang, cfg, format)
 	})
-
-	if err != nil {
-		return fmt.Errorf("遍历目录失败: %v", err)
-	}
-
-	if len(errFiles) > 0 {
-		fmt.Printf("\n处理完成，但有 %d 个文件失败:\n", len(errFiles))
-		for _, f := range errFiles {
-			fmt.Printf("- %s\n", f)
-		}
-	} else if totalFiles > 0 {
-		fmt.Printf("所有文件翻译完成！共处理 %d 个文件\n", totalFiles)
-	}
-
-	return nil
 }
