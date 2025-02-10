@@ -19,7 +19,7 @@ var (
 	format   bool
 )
 
-// 生成目标文件路径
+// Generate target file path
 func generateTargetPath(sourcePath, lang string) string {
 	dir := filepath.Dir(sourcePath)
 	base := filepath.Base(sourcePath)
@@ -65,36 +65,36 @@ Examples:
 			return fmt.Errorf("failed to load config: %v", err)
 		}
 
-		// 验证语言选项
+		// Validate language option
 		if !translator.IsLanguageSupported(locale) {
 			return fmt.Errorf("unsupported locale: %s\nSupported languages: %s",
 				locale,
 				translator.GetSupportedLanguages())
 		}
 
-		// 检查源路径是否存在
+		// Check if source path exists
 		if _, err := os.Stat(fromPath); os.IsNotExist(err) {
 			return fmt.Errorf("source path does not exist: %s", fromPath)
 		}
 
-		// 获取源路径的绝对路径
+		// Get absolute path of source path
 		srcAbs, err := filepath.Abs(fromPath)
 		if err != nil {
 			return fmt.Errorf("failed to get absolute path: %v", err)
 		}
 
-		// 检查是文件还是目录
+		// Check if it's a file or directory
 		fi, err := os.Stat(srcAbs)
 		if err != nil {
 			return fmt.Errorf("failed to get file info: %v", err)
 		}
 
 		if fi.IsDir() {
-			// 如果是目录，且没有指定目标路径，则使用相同的目录结构
+			// If it's a directory and no target path specified, use the same directory structure
 			if toPath == "" {
 				return translator.ProcessDirectory(srcAbs, srcAbs, locale, cfg, force, format)
 			}
-			// 如果指定了目标路径，使用指定的路径
+			// If target path is specified, use the specified path
 			dstAbs, err := filepath.Abs(toPath)
 			if err != nil {
 				return fmt.Errorf("failed to get absolute path: %v", err)
@@ -102,13 +102,13 @@ Examples:
 			return translator.ProcessDirectory(srcAbs, dstAbs, locale, cfg, force, format)
 		}
 
-		// 处理单个文件
+		// Process single file
 		var dstAbs string
 		if toPath == "" {
-			// 如果没有指定目标路径，在源文件同目录生成 name_lang.md
+			// If no target path specified, generate name_lang.md in the same directory as source
 			dstAbs = generateTargetPath(srcAbs, locale)
 		} else {
-			// 如果指定了目标路径，使用指定的路径
+			// If target path specified, use the specified path
 			dstAbs, err = filepath.Abs(toPath)
 			if err != nil {
 				return fmt.Errorf("failed to get absolute path: %v", err)

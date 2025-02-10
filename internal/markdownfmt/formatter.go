@@ -6,106 +6,106 @@ import (
 	"strings"
 )
 
-// Formatter 用于格式化 markdown 内容
+// Formatter for formatting markdown content
 type Formatter struct {
-	// 是否启用格式化
+	// Whether formatting is enabled
 	enabled bool
 }
 
-// New 创建一个新的格式化器
+// New creates a new formatter
 func New(enabled bool) *Formatter {
 	return &Formatter{
 		enabled: enabled,
 	}
 }
 
-// Format 格式化 markdown 内容
+// Format formats markdown content
 func (f *Formatter) Format(content string) string {
 	if !f.enabled {
 		return content
 	}
 
-	// 1. 分割内容为行
+	// 1. Split content into lines
 	lines := strings.Split(content, "\n")
 
-	// 2. 处理每一行
+	// 2. Process each line
 	var formatted []string
 	for i := 0; i < len(lines); i++ {
 		line := lines[i]
 
-		// 处理标题：确保标题前后有空行
+		// Process headings: ensure there are blank lines before and after
 		if isHeading(line) {
-			// 如果不是第一行，且前一行不是空行，添加空行
+			// If not the first line and previous line is not blank, add a blank line
 			if i > 0 && len(strings.TrimSpace(lines[i-1])) > 0 {
 				formatted = append(formatted, "")
 			}
-			// 规范化标题格式（# 后面有一个空格）
+			// Normalize heading format (one space after #)
 			line = formatHeading(line)
 			formatted = append(formatted, line)
-			// 如果不是最后一行，添加空行
+			// If not the last line, add a blank line
 			if i < len(lines)-1 {
 				formatted = append(formatted, "")
 			}
 			continue
 		}
 
-		// 处理链接中的空格
+		// Process spaces in links
 		line = formatMarkdownLinks(line)
 
-		// 处理括号内容
+		// Process content in parentheses
 		line = formatParentheses(line)
 
-		// 处理中英文之间的空格
+		// Process spaces between Chinese and English text
 		line = formatChineseEnglishSpace(line)
 
 		formatted = append(formatted, line)
 	}
 
-	// 3. 处理连续空行
+	// 3. Handle consecutive blank lines
 	formatted = removeConsecutiveBlankLines(formatted)
 
-	// 4. 合并行
+	// 4. Join lines
 	result := strings.Join(formatted, "\n")
 
 	return result
 }
 
-// isHeading 检查是否是标题行
+// isHeading checks if the line is a heading
 func isHeading(line string) bool {
 	return strings.HasPrefix(strings.TrimSpace(line), "#")
 }
 
-// formatHeading 格式化标题行
+// formatHeading formats the heading line
 func formatHeading(line string) string {
-	// 移除开头的空格
+	// Remove leading spaces
 	line = strings.TrimSpace(line)
-	// 确保 # 和文本之间只有一个空格
+	// Ensure only one space between # and text
 	re := regexp.MustCompile(`^(#+)\s*`)
 	return re.ReplaceAllString(line, "$1 ")
 }
 
-// formatParentheses 处理括号内的格式
+// formatParentheses processes the format within parentheses
 func formatParentheses(line string) string {
-	// 先处理 http/https 链接，将它们临时替换掉
+	// First handle http/https links by temporarily replacing them
 	linkPattern := regexp.MustCompile(`\([^)]*https?://[^)]+\)`)
 	links := linkPattern.FindAllString(line, -1)
 	for i, link := range links {
 		line = strings.Replace(line, link, fmt.Sprintf("__LINK_PLACEHOLDER_%d__", i), 1)
 	}
 
-	// 处理普通括号内容
+	// Process regular parentheses content
 	re := regexp.MustCompile(`\(([^)]+)\)`)
 	line = re.ReplaceAllStringFunc(line, func(match string) string {
-		// 提取括号内的内容
+		// Extract content within parentheses
 		content := match[1 : len(match)-1]
-		// 清理首尾空格
+		// Clean leading and trailing spaces
 		content = strings.TrimSpace(content)
-		// 将连续的空格替换为单个空格
+		// Replace consecutive spaces with a single space
 		content = regexp.MustCompile(`\s+`).ReplaceAllString(content, " ")
 		return fmt.Sprintf("(%s)", content)
 	})
 
-	// 恢复链接
+	// Restore links
 	for i, link := range links {
 		line = strings.Replace(line, fmt.Sprintf("__LINK_PLACEHOLDER_%d__", i), link, 1)
 	}
@@ -113,14 +113,14 @@ func formatParentheses(line string) string {
 	return line
 }
 
-// formatMarkdownLinks 处理 markdown 链接中的空格
+// formatMarkdownLinks processes spaces in markdown links
 func formatMarkdownLinks(line string) string {
-	// 匹配 markdown 链接格式 [text](url)，包括可能的空格
+	// Match markdown link format [text](url), including possible spaces
 	linkPattern := regexp.MustCompile(`\[(.*?)\]\(\s*(.*?)\s*\)`)
 
-	// 处理链接文本和 URL 中的空格
+	// Process spaces in link text and URL
 	line = linkPattern.ReplaceAllStringFunc(line, func(match string) string {
-		// 提取链接文本和 URL
+		// Extract link text and URL
 		parts := linkPattern.FindStringSubmatch(match)
 		if len(parts) != 3 {
 			return match
@@ -129,20 +129,20 @@ func formatMarkdownLinks(line string) string {
 		text := parts[1]
 		url := parts[2]
 
-		// 清理 URL 中的空格
+		// Clean spaces in URL
 		url = strings.TrimSpace(url)
-		// 移除 URL 中的所有空格和不可见字符
+		// Remove all spaces and invisible characters in URL
 		url = regexp.MustCompile(`[\s\p{Zs}\p{C}]+`).ReplaceAllString(url, "")
 
-		// 保持链接文本中的空格，但清理首尾空格和连续空格
+		// Keep spaces in link text, but clean leading/trailing spaces and consecutive spaces
 		text = strings.TrimSpace(text)
 		text = regexp.MustCompile(`\s+`).ReplaceAllString(text, " ")
 
-		// 重新组装链接
+		// Reassemble link
 		return fmt.Sprintf("[%s](%s)", text, url)
 	})
 
-	// 处理标题链接中的空格
+	// Process spaces in heading links
 	headingLinkPattern := regexp.MustCompile(`\]\(#(.*?)\)`)
 	line = headingLinkPattern.ReplaceAllStringFunc(line, func(match string) string {
 		parts := headingLinkPattern.FindStringSubmatch(match)
@@ -151,7 +151,7 @@ func formatMarkdownLinks(line string) string {
 		}
 
 		anchor := parts[1]
-		// 移除所有空格
+		// Remove all spaces
 		anchor = regexp.MustCompile(`\s+`).ReplaceAllString(anchor, "")
 		return fmt.Sprintf("](#%s)", anchor)
 	})
@@ -159,9 +159,9 @@ func formatMarkdownLinks(line string) string {
 	return line
 }
 
-// formatChineseEnglishSpace 在中英文之间添加空格
+// formatChineseEnglishSpace adds spaces between Chinese and English text
 func formatChineseEnglishSpace(line string) string {
-	// 匹配中文和英文/数字之间的边界
+	// Match boundaries between Chinese and English/numbers
 	re := regexp.MustCompile(`([\p{Han}])([A-Za-z0-9])`)
 	line = re.ReplaceAllString(line, "$1 $2")
 
@@ -171,7 +171,7 @@ func formatChineseEnglishSpace(line string) string {
 	return line
 }
 
-// removeConsecutiveBlankLines 移除连续的空行
+// removeConsecutiveBlankLines removes consecutive blank lines
 func removeConsecutiveBlankLines(lines []string) []string {
 	var result []string
 	isPrevLineBlank := false
