@@ -1,6 +1,8 @@
 package main
 
-import "mdctl/cmd"
+import (
+	"github.com/samzong/mdctl/cmd"
+)
 
 func main() {
 	cmd.Execute()
