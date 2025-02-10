@@ -4,7 +4,7 @@
 
 [English](README.md) | [中文版](README_zh.md)
 
-A command-line tool for processing Markdown files. Currently, it supports automatically downloading remote images to local storage and updating the image references in Markdown files.
+A command-line tool for processing Markdown files. Currently, it supports automatically downloading remote images to local storage and updating the image references in Markdown files, as well as translating markdown files using AI models.
 
 ## Features
 
@@ -14,6 +14,7 @@ A command-line tool for processing Markdown files. Currently, it supports automa
 - Handles duplicate filenames automatically.
 - Updates image references in Markdown files using relative paths.
 - Provides detailed processing logs.
+- Translates markdown files using AI models with support for multiple languages.
 
 ## Installation
 
@@ -64,7 +65,31 @@ Parameters:
 
 ## Translate Command
 
-The `translate` command allows you to translate markdown files or directories to a specified language.
+The `translate` command allows you to translate markdown files or directories to a specified language using AI models.
+
+### Supported AI Models
+
+- OpenAI API (Current)
+- Ollama (Coming Soon)
+- Google Gemini (Coming Soon)
+- Anthropic Claude (Coming Soon)
+
+### Supported Languages
+
+- Arabic (العربية)
+- Chinese (中文)
+- English (English)
+- French (Français)
+- German (Deutsch)
+- Hindi (हिन्दी)
+- Italian (Italiano)
+- Japanese (日本語)
+- Korean (한국어)
+- Portuguese (Português)
+- Russian (Русский)
+- Spanish (Español)
+- Thai (ไทย)
+- Vietnamese (Tiếng Việt)
 
 ### Configuration
 
@@ -73,7 +98,7 @@ Create a configuration file at `~/.config/mdctl/config.json` with the following 
 ```json
 {
   "translate_prompt": "Please translate the following markdown content to {TARGET_LANG}, keep the markdown format and front matter unchanged:",
-  "endpoint": "https://api.openai.com/v1",
+  "endpoint": "your-api-endpoint",
   "api_key": "your-api-key",
   "model": "gpt-3.5-turbo",
   "temperature": 0.0,
@@ -81,17 +106,33 @@ Create a configuration file at `~/.config/mdctl/config.json` with the following 
 }
 ```
 
+Or use the config command to set up:
+
+```bash
+# Set API endpoint
+mdctl config set -k endpoint -v "your-api-endpoint"
+
+# Set API key
+mdctl config set -k api_key -v "your-api-key"
+
+# Set model
+mdctl config set -k model -v "gpt-3.5-turbo"
+```
+
 ### Usage
 
 ```bash
-# Translate a single file
-mdctl translate --from path/to/source.md --to path/to/target.md --locales en
+# Translate a single file to Chinese
+mdctl translate -f README.md -l zh
 
-# Translate a directory
-mdctl translate --from path/to/source/dir --to path/to/target/dir --locales zh
+# Translate a directory to Japanese
+mdctl translate -f docs -l ja
 
-# Force translate even if already translated
-mdctl translate --from path/to/source.md --locales en -f
+# Force translate an already translated file
+mdctl translate -f README.md -l ko -F
+
+# Translate to a specific output path
+mdctl translate -f docs -l fr -t translated_docs
 ```
 
 ### Features
@@ -99,8 +140,9 @@ mdctl translate --from path/to/source.md --locales en -f
 - Supports translating single files or entire directories
 - Maintains directory structure when translating directories
 - Adds front matter to track translation status
-- Supports force translation with `-f` flag
-- Supports translation between English (en) and Chinese (zh)
+- Supports force translation with `-F` flag
+- Supports translation between multiple languages
+- Shows translation progress with detailed status information
 
 ## Config Command
 
@@ -125,12 +167,15 @@ mdctl config set -k temperature -v "0.8"
 ### Available Configuration Keys
 
 - `translate_prompt`: The prompt template for translation
-- `endpoint`: OpenAI API endpoint URL
-- `api_key`: Your OpenAI API key
-- `model`: The model to use for translation (e.g., gpt-3.5-turbo, gpt-4)
+- `endpoint`: AI model API endpoint URL
+- `api_key`: Your API key
+- `model`: The model to use for translation
 - `temperature`: Temperature setting for the model (0.0 to 1.0)
 - `top_p`: Top P setting for the model (0.0 to 1.0)
 
 ## Notes
 
-1. `-f` and `
+1. `-f` and `-d` parameters cannot be used together
+2. If no output directory is specified, the tool will automatically create a default `images` directory
+3. Only remote images (http/https) will be processed, local image references will not be modified
+4. Image filenames will retain their original names, if duplicates occur, a hash of the URL will be added as a suffix

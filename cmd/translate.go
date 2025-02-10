@@ -29,8 +29,32 @@ func generateTargetPath(sourcePath, lang string) string {
 
 var translateCmd = &cobra.Command{
 	Use:   "translate",
-	Short: "Translate markdown files",
-	Long:  `Translate markdown files or directories to specified language`,
+	Short: "Translate markdown files using AI models",
+	Long: `Translate markdown files or directories to specified language using AI models.
+
+Supported AI Models:
+  - OpenAI API (Current)
+  - Ollama (Coming Soon)
+  - Google Gemini (Coming Soon)
+  - Anthropic Claude (Coming Soon)
+	
+Supported Languages:
+  ar (العربية), de (Deutsch), en (English), es (Español), fr (Français),
+  hi (हिन्दी), it (Italiano), ja (日本語), ko (한국어), pt (Português),
+  ru (Русский), th (ไทย), vi (Tiếng Việt), zh (中文)
+
+Examples:
+  # Translate a single file to Chinese
+  mdctl translate -f README.md -l zh
+
+  # Translate a directory to Japanese
+  mdctl translate -f docs -l ja
+
+  # Force translate an already translated file
+  mdctl translate -f README.md -l ko -F
+
+  # Translate to a specific output path
+  mdctl translate -f docs -l fr -t translated_docs`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := config.LoadConfig()
 		if err != nil {
@@ -38,8 +62,10 @@ var translateCmd = &cobra.Command{
 		}
 
 		// 验证语言选项
-		if locale != "en" && locale != "zh" {
-			return fmt.Errorf("unsupported locale: %s, only support en/zh", locale)
+		if !translator.IsLanguageSupported(locale) {
+			return fmt.Errorf("unsupported locale: %s\nSupported languages: %s",
+				locale,
+				translator.GetSupportedLanguages())
 		}
 
 		// 检查源路径是否存在
@@ -85,7 +111,11 @@ var translateCmd = &cobra.Command{
 			}
 		}
 
-		return translator.ProcessFile(srcAbs, dstAbs, locale, cfg, force)
+		progress := &translator.Progress{
+			Total:   1,
+			Current: 0,
+		}
+		return translator.ProcessFile(srcAbs, dstAbs, locale, cfg, force, progress)
 	},
 }
 
@@ -94,7 +124,7 @@ func init() {
 
 	translateCmd.Flags().StringVarP(&fromPath, "from", "f", "", "Source file or directory path")
 	translateCmd.Flags().StringVarP(&toPath, "to", "t", "", "Target file or directory path (optional, default: generate in same directory as source)")
-	translateCmd.Flags().StringVarP(&locale, "locales", "l", "", "Target language (en/zh)")
+	translateCmd.Flags().StringVarP(&locale, "locales", "l", "", "Target language code (e.g., zh, en, ja, ko, fr, de, es, etc.)")
 	translateCmd.Flags().BoolVarP(&force, "force", "F", false, "Force translate even if already translated")
 
 	translateCmd.MarkFlagRequired("from")

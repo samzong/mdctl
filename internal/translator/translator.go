@@ -8,11 +8,46 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/samzong/mdctl/internal/config"
 	"gopkg.in/yaml.v3"
 )
+
+// SupportedLanguages 定义支持的语言映射
+var SupportedLanguages = map[string]string{
+	"zh": "中文",
+	"en": "English",
+	"ja": "日本語",
+	"ko": "한국어",
+	"fr": "Français",
+	"de": "Deutsch",
+	"es": "Español",
+	"it": "Italiano",
+	"ru": "Русский",
+	"pt": "Português",
+	"vi": "Tiếng Việt",
+	"th": "ไทย",
+	"ar": "العربية",
+	"hi": "हिन्दी",
+}
+
+// IsLanguageSupported 检查语言是否支持
+func IsLanguageSupported(lang string) bool {
+	_, ok := SupportedLanguages[lang]
+	return ok
+}
+
+// GetSupportedLanguages 获取支持的语言列表
+func GetSupportedLanguages() string {
+	var langs []string
+	for code, name := range SupportedLanguages {
+		langs = append(langs, fmt.Sprintf("%s (%s)", code, name))
+	}
+	sort.Strings(langs)
+	return strings.Join(langs, ", ")
+}
 
 type OpenAIMessage struct {
 	Role    string `json:"role"`
@@ -36,6 +71,14 @@ type OpenAIResponse struct {
 
 type FrontMatter struct {
 	Translated bool `yaml:"translated"`
+}
+
+// Progress 用于跟踪翻译进度
+type Progress struct {
+	Total      int
+	Current    int
+	SourceFile string
+	TargetFile string
 }
 
 func TranslateContent(content string, targetLang string, cfg *config.Config) (string, error) {
@@ -90,7 +133,17 @@ func TranslateContent(content string, targetLang string, cfg *config.Config) (st
 	return openAIResp.Choices[0].Message.Content, nil
 }
 
-func ProcessFile(srcPath, dstPath string, targetLang string, cfg *config.Config, force bool) error {
+func ProcessFile(srcPath, dstPath string, targetLang string, cfg *config.Config, force bool, progress *Progress) error {
+	if progress != nil {
+		progress.SourceFile = filepath.Base(srcPath)
+		progress.TargetFile = filepath.Base(dstPath)
+		if progress.Total > 1 {
+			fmt.Printf("开始翻译 [%d/%d] %s...\n", progress.Current+1, progress.Total, progress.SourceFile)
+		} else {
+			fmt.Printf("开始翻译 %s...\n", progress.SourceFile)
+		}
+	}
+
 	content, err := os.ReadFile(srcPath)
 	if err != nil {
 		return err
@@ -105,7 +158,15 @@ func ProcessFile(srcPath, dstPath string, targetLang string, cfg *config.Config,
 		}
 
 		if frontMatter.Translated && !force {
-			return fmt.Errorf("file already translated, use -f to force translate")
+			if progress != nil {
+				if progress.Total > 1 {
+					fmt.Printf("跳过 [%d/%d] %s (已翻译)\n", progress.Current+1, progress.Total, progress.SourceFile)
+				} else {
+					fmt.Printf("跳过 %s (已翻译)\n", progress.SourceFile)
+				}
+				progress.Current++
+			}
+			return fmt.Errorf("file already translated, use -F to force translate")
 		}
 
 		frontMatter.Translated = true
@@ -126,7 +187,19 @@ func ProcessFile(srcPath, dstPath string, targetLang string, cfg *config.Config,
 
 		// 写入新文件
 		output := fmt.Sprintf("---\n%s---\n%s", string(newFrontMatter), translatedContent)
-		return os.WriteFile(dstPath, []byte(output), 0644)
+		if err := os.WriteFile(dstPath, []byte(output), 0644); err != nil {
+			return err
+		}
+
+		if progress != nil {
+			if progress.Total > 1 {
+				fmt.Printf("✓ 完成翻译 [%d/%d] %s -> %s\n", progress.Current+1, progress.Total, progress.SourceFile, progress.TargetFile)
+			} else {
+				fmt.Printf("✓ 完成翻译 %s -> %s\n", progress.SourceFile, progress.TargetFile)
+			}
+			progress.Current++
+		}
+		return nil
 	}
 
 	// 如果没有 Front Matter，直接翻译整个文件
@@ -149,11 +222,46 @@ func ProcessFile(srcPath, dstPath string, targetLang string, cfg *config.Config,
 
 	// 写入新文件
 	output := fmt.Sprintf("---\n%s---\n%s", string(newFrontMatter), translatedContent)
-	return os.WriteFile(dstPath, []byte(output), 0644)
+	if err := os.WriteFile(dstPath, []byte(output), 0644); err != nil {
+		return err
+	}
+
+	if progress != nil {
+		if progress.Total > 1 {
+			fmt.Printf("✓ 完成翻译 [%d/%d] %s -> %s\n", progress.Current+1, progress.Total, progress.SourceFile, progress.TargetFile)
+		} else {
+			fmt.Printf("✓ 完成翻译 %s -> %s\n", progress.SourceFile, progress.TargetFile)
+		}
+		progress.Current++
+	}
+	return nil
 }
 
 func ProcessDirectory(srcDir, dstDir string, targetLang string, cfg *config.Config, force bool) error {
-	return filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+	// 首先统计需要处理的文件数量
+	var totalFiles int
+	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && strings.HasSuffix(strings.ToLower(path), ".md") {
+			totalFiles++
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("正在扫描目录 [%s]...\n", srcDir)
+	fmt.Printf("找到 %d 个 Markdown 文件需要翻译\n", totalFiles)
+
+	progress := &Progress{
+		Total:   totalFiles,
+		Current: 0,
+	}
+
+	err = filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -181,11 +289,17 @@ func ProcessDirectory(srcDir, dstDir string, targetLang string, cfg *config.Conf
 			ext := filepath.Ext(base)
 			nameWithoutExt := strings.TrimSuffix(base, ext)
 			dstPath := filepath.Join(dir, nameWithoutExt+"_"+targetLang+ext)
-			return ProcessFile(path, dstPath, targetLang, cfg, force)
+			return ProcessFile(path, dstPath, targetLang, cfg, force, progress)
 		}
 
 		// 如果指定了不同的目标目录，使用指定的目录结构
 		dstPath := filepath.Join(dstDir, relPath)
-		return ProcessFile(path, dstPath, targetLang, cfg, force)
+		return ProcessFile(path, dstPath, targetLang, cfg, force, progress)
 	})
+
+	if err == nil && totalFiles > 0 {
+		fmt.Printf("所有文件翻译完成！共处理 %d 个文件\n", totalFiles)
+	}
+
+	return err
 }
