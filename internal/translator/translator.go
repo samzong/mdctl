@@ -78,10 +78,14 @@ type Progress struct {
 	TargetFile string
 }
 
+// ProgressCallback 进度回调函数类型
+type ProgressCallback func(progress Progress)
+
 // Translator 翻译器结构体
 type Translator struct {
-	config *config.Config
-	format bool
+	config   *config.Config
+	format   bool
+	progress ProgressCallback
 }
 
 // New 创建新的翻译器实例
@@ -89,6 +93,11 @@ func New(cfg *config.Config, format bool) *Translator {
 	return &Translator{
 		config: cfg,
 		format: format,
+		progress: func(p Progress) {
+			if p.Total > 1 {
+				fmt.Printf("Translating file [%d/%d]: %s\n", p.Current, p.Total, p.SourceFile)
+			}
+		},
 	}
 }
 
@@ -263,10 +272,26 @@ func ProcessFile(srcPath, dstPath, targetLang string, cfg *config.Config, format
 
 // ProcessDirectory 处理目录中的所有 markdown 文件
 func ProcessDirectory(srcDir, dstDir string, targetLang string, cfg *config.Config, force bool, format bool) error {
-	// 确保源目录存在
-	if _, err := os.Stat(srcDir); os.IsNotExist(err) {
-		return fmt.Errorf("source directory does not exist: %s", srcDir)
+	// 首先计算需要处理的文件总数
+	var total int
+	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && filepath.Ext(path) == ".md" {
+			total++
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to count files: %v", err)
 	}
+
+	fmt.Printf("Found %d markdown files to translate\n", total)
+
+	// 创建翻译器实例
+	t := New(cfg, format)
+	current := 0
 
 	// 遍历源目录
 	return filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
@@ -285,23 +310,38 @@ func ProcessDirectory(srcDir, dstDir string, targetLang string, cfg *config.Conf
 			return nil
 		}
 
+		current++
+
 		// 获取相对路径
 		relPath, err := filepath.Rel(srcDir, path)
 		if err != nil {
 			return fmt.Errorf("failed to get relative path: %v", err)
 		}
 
-		// 如果目标目录为空，在源文件所在目录创建翻译文件
+		var dstPath string
 		if dstDir == "" {
+			// 如果目标目录为空，在源文件所在目录创建翻译文件
 			dir := filepath.Dir(path)
 			base := filepath.Base(path)
 			nameWithoutExt := strings.TrimSuffix(base, ext)
-			dstPath := filepath.Join(dir, nameWithoutExt+"_"+targetLang+ext)
-			return ProcessFile(path, dstPath, targetLang, cfg, format)
+			dstPath = filepath.Join(dir, nameWithoutExt+"_"+targetLang+ext)
+		} else {
+			// 如果指定了不同的目标目录，使用指定的目录结构
+			dstPath = filepath.Join(dstDir, relPath)
 		}
 
-		// 如果指定了不同的目标目录，使用指定的目录结构
-		dstPath := filepath.Join(dstDir, relPath)
-		return ProcessFile(path, dstPath, targetLang, cfg, format)
+		t.progress(Progress{
+			Total:      total,
+			Current:    current,
+			SourceFile: path,
+			TargetFile: dstPath,
+		})
+
+		// 处理文件
+		if err := ProcessFile(path, dstPath, targetLang, cfg, format); err != nil {
+			return fmt.Errorf("failed to process file %s: %v", path, err)
+		}
+
+		return nil
 	})
 }

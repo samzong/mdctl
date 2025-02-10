@@ -1,6 +1,7 @@
 package markdownfmt
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -48,6 +49,12 @@ func (f *Formatter) Format(content string) string {
 			continue
 		}
 
+		// 处理链接中的空格
+		line = formatMarkdownLinks(line)
+
+		// 处理括号内容
+		line = formatParentheses(line)
+
 		// 处理中英文之间的空格
 		line = formatChineseEnglishSpace(line)
 
@@ -77,13 +84,88 @@ func formatHeading(line string) string {
 	return re.ReplaceAllString(line, "$1 ")
 }
 
+// formatParentheses 处理括号内的格式
+func formatParentheses(line string) string {
+	// 先处理 http/https 链接，将它们临时替换掉
+	linkPattern := regexp.MustCompile(`\([^)]*https?://[^)]+\)`)
+	links := linkPattern.FindAllString(line, -1)
+	for i, link := range links {
+		line = strings.Replace(line, link, fmt.Sprintf("__LINK_PLACEHOLDER_%d__", i), 1)
+	}
+
+	// 处理普通括号内容
+	re := regexp.MustCompile(`\(([^)]+)\)`)
+	line = re.ReplaceAllStringFunc(line, func(match string) string {
+		// 提取括号内的内容
+		content := match[1 : len(match)-1]
+		// 清理首尾空格
+		content = strings.TrimSpace(content)
+		// 将连续的空格替换为单个空格
+		content = regexp.MustCompile(`\s+`).ReplaceAllString(content, " ")
+		return fmt.Sprintf("(%s)", content)
+	})
+
+	// 恢复链接
+	for i, link := range links {
+		line = strings.Replace(line, fmt.Sprintf("__LINK_PLACEHOLDER_%d__", i), link, 1)
+	}
+
+	return line
+}
+
+// formatMarkdownLinks 处理 markdown 链接中的空格
+func formatMarkdownLinks(line string) string {
+	// 匹配 markdown 链接格式 [text](url)，包括可能的空格
+	linkPattern := regexp.MustCompile(`\[(.*?)\]\(\s*(.*?)\s*\)`)
+
+	// 处理链接文本和 URL 中的空格
+	line = linkPattern.ReplaceAllStringFunc(line, func(match string) string {
+		// 提取链接文本和 URL
+		parts := linkPattern.FindStringSubmatch(match)
+		if len(parts) != 3 {
+			return match
+		}
+
+		text := parts[1]
+		url := parts[2]
+
+		// 清理 URL 中的空格
+		url = strings.TrimSpace(url)
+		// 移除 URL 中的所有空格和不可见字符
+		url = regexp.MustCompile(`[\s\p{Zs}\p{C}]+`).ReplaceAllString(url, "")
+
+		// 保持链接文本中的空格，但清理首尾空格和连续空格
+		text = strings.TrimSpace(text)
+		text = regexp.MustCompile(`\s+`).ReplaceAllString(text, " ")
+
+		// 重新组装链接
+		return fmt.Sprintf("[%s](%s)", text, url)
+	})
+
+	// 处理标题链接中的空格
+	headingLinkPattern := regexp.MustCompile(`\]\(#(.*?)\)`)
+	line = headingLinkPattern.ReplaceAllStringFunc(line, func(match string) string {
+		parts := headingLinkPattern.FindStringSubmatch(match)
+		if len(parts) != 2 {
+			return match
+		}
+
+		anchor := parts[1]
+		// 移除所有空格
+		anchor = regexp.MustCompile(`\s+`).ReplaceAllString(anchor, "")
+		return fmt.Sprintf("](#%s)", anchor)
+	})
+
+	return line
+}
+
 // formatChineseEnglishSpace 在中英文之间添加空格
 func formatChineseEnglishSpace(line string) string {
 	// 匹配中文和英文/数字之间的边界
-	re := regexp.MustCompile(`([\\p{Han}])([A-Za-z0-9])`)
+	re := regexp.MustCompile(`([\p{Han}])([A-Za-z0-9])`)
 	line = re.ReplaceAllString(line, "$1 $2")
 
-	re = regexp.MustCompile(`([A-Za-z0-9])([\\p{Han}])`)
+	re = regexp.MustCompile(`([A-Za-z0-9])([\p{Han}])`)
 	line = re.ReplaceAllString(line, "$1 $2")
 
 	return line
