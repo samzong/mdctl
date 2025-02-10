@@ -52,13 +52,13 @@ func (p *Processor) processFile(filePath string) error {
 		return fmt.Errorf("failed to read file %s: %v", filePath, err)
 	}
 
-	// 确定图片输出目录
+	// Determine image output directory
 	imgDir := p.determineImageDir(filePath)
 	if err := os.MkdirAll(imgDir, 0755); err != nil {
 		return fmt.Errorf("failed to create image directory %s: %v", imgDir, err)
 	}
 
-	// 查找所有图片链接
+	// Find all image links
 	imgRegex := regexp.MustCompile(`!\[([^\]]*)\]\(([^)]+)\)`)
 	matches := imgRegex.FindAllStringSubmatch(string(content), -1)
 
@@ -69,36 +69,36 @@ func (p *Processor) processFile(filePath string) error {
 		imgAlt := match[1]
 		imgURL := match[2]
 
-		// 替换图片URL开头"//"为"https://"
+		// Replace image URL starting with "//" to "https://"
 		if strings.HasPrefix(imgURL, "//") {
 			imgURL = strings.Replace(imgURL, "//", "https://", 1)
 		}
-		// 跳过本地图片
+		// Skip local images
 		if !strings.HasPrefix(imgURL, "http://") && !strings.HasPrefix(imgURL, "https://") {
 			continue
 		}
 
-		// 下载并保存图片
+		// Download and save image
 		localPath, err := p.downloadImage(imgURL, imgDir)
 		if err != nil {
 			fmt.Printf("Warning: Failed to download image %s: %v\n", imgURL, err)
 			continue
 		}
 
-		// 计算相对路径
+		// Calculate relative path
 		relPath, err := filepath.Rel(filepath.Dir(filePath), localPath)
 		if err != nil {
 			fmt.Printf("Warning: Failed to calculate relative path: %v\n", err)
 			continue
 		}
 
-		// 替换图片链接
+		// Replace image link
 		oldLink := fmt.Sprintf("![%s](%s)", match[1], match[2])
 		newLink := fmt.Sprintf("![%s](%s)", imgAlt, relPath)
 		newContent = strings.Replace(newContent, oldLink, newLink, 1)
 	}
 
-	// 写回文件
+	// Write back to file
 	if err := os.WriteFile(filePath, []byte(newContent), 0644); err != nil {
 		return fmt.Errorf("failed to write file %s: %v", filePath, err)
 	}
@@ -123,10 +123,10 @@ func (p *Processor) downloadImage(url string, destDir string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	// 从URL或Content-Disposition获取文件名
+	// Get filename from URL or Content-Disposition
 	filename := getFilenameFromURL(url, resp)
 
-	// 如果没有扩展名，尝试从Content-Type获取
+	// If no extension, try to get from Content-Type
 	if filepath.Ext(filename) == "" {
 		contentType := resp.Header.Get("Content-Type")
 		ext := getExtensionFromContentType(contentType)
@@ -135,7 +135,7 @@ func (p *Processor) downloadImage(url string, destDir string) (string, error) {
 		}
 	}
 
-	// 确保文件名唯一
+	// Ensure filename is unique
 	hash := md5.New()
 	io.WriteString(hash, url)
 	urlHash := fmt.Sprintf("%x", hash.Sum(nil))[:8]
@@ -146,14 +146,14 @@ func (p *Processor) downloadImage(url string, destDir string) (string, error) {
 
 	localPath := filepath.Join(destDir, filename)
 
-	// 创建目标文件
+	// Create target file
 	out, err := os.Create(localPath)
 	if err != nil {
 		return "", err
 	}
 	defer out.Close()
 
-	// 写入文件
+	// Write to file
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
 		return "", err
@@ -164,7 +164,7 @@ func (p *Processor) downloadImage(url string, destDir string) (string, error) {
 }
 
 func getFilenameFromURL(url string, resp *http.Response) string {
-	// 首先尝试从Content-Disposition获取
+	// First try to get from Content-Disposition
 	if cd := resp.Header.Get("Content-Disposition"); cd != "" {
 		if strings.Contains(cd, "filename=") {
 			parts := strings.Split(cd, "filename=")
@@ -177,15 +177,15 @@ func getFilenameFromURL(url string, resp *http.Response) string {
 		}
 	}
 
-	// 从URL路径获取
+	// Get from URL path
 	parts := strings.Split(url, "/")
 	if len(parts) > 0 {
 		filename := parts[len(parts)-1]
-		// 移除URL参数
+		// Remove URL parameters
 		if idx := strings.Index(filename, "?"); idx != -1 {
 			filename = filename[:idx]
 		}
-		// 移除尾部多余字符 "@"
+		// Remove trailing "@" character
 		if idx := strings.LastIndex(filename, "@"); idx != -1 {
 			if idx > strings.LastIndex(filename, ".") {
 				filename = filename[:idx]
@@ -196,7 +196,7 @@ func getFilenameFromURL(url string, resp *http.Response) string {
 		}
 	}
 
-	// 使用默认名称
+	// Use default name
 	return "image"
 }
 

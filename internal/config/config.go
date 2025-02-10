@@ -17,7 +17,7 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
-	TranslatePrompt:   "Please translate the following markdown content to {TARGET_LANG}, keep the markdown format and front matter unchanged:",
+	TranslatePrompt:   "Please translate the following markdown content to {TARGET_LANG}. Keep the original markdown format and front matter unchanged. Do not add any additional markdown code blocks or backticks. Translate the content directly:",
 	OpenAIEndpointURL: "https://api.openai.com/v1",
 	OpenAIAPIKey:      "",
 	ModelName:         "gpt-3.5-turbo",
