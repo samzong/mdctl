@@ -259,7 +259,7 @@ func ProcessFile(srcPath, dstPath, targetLang string, cfg *config.Config, format
 		return fmt.Errorf("failed to marshal front matter: %v", err)
 	}
 
-	newContent := fmt.Sprintf("---\n%s\n---\n\n%s", string(frontMatterBytes), translatedContent)
+	newContent := fmt.Sprintf("---\n%s---\n\n%s", string(frontMatterBytes), translatedContent)
 
 	// 创建目标文件的目录（如果不存在）
 	if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil {
