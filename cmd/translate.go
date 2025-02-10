@@ -115,7 +115,7 @@ Examples:
 			}
 		}
 
-		return translator.ProcessFile(srcAbs, dstAbs, locale, cfg, format)
+		return translator.ProcessFile(srcAbs, dstAbs, locale, cfg, format, force)
 	},
 }
 

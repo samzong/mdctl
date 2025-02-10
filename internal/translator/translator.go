@@ -185,13 +185,39 @@ func removeFrontMatter(content string) string {
 }
 
 // ProcessFile 处理单个文件的翻译
-func ProcessFile(srcPath, dstPath, targetLang string, cfg *config.Config, format bool) error {
+func ProcessFile(srcPath, dstPath, targetLang string, cfg *config.Config, format bool, force bool) error {
 	t := New(cfg, format)
 
 	// 检查目标路径是否是目录
 	dstInfo, err := os.Stat(dstPath)
 	if err == nil && dstInfo.IsDir() {
 		dstPath = filepath.Join(dstPath, filepath.Base(srcPath))
+	}
+
+	// 检查目标文件是否已经存在
+	if _, err := os.Stat(dstPath); err == nil {
+		dstContent, err := os.ReadFile(dstPath)
+		if err != nil {
+			return fmt.Errorf("failed to read target file: %v", err)
+		}
+
+		// 检查是否已翻译
+		var dstFrontMatter map[string]interface{}
+		if strings.HasPrefix(string(dstContent), "---\n") {
+			parts := strings.SplitN(string(dstContent)[4:], "\n---\n", 2)
+			if len(parts) == 2 {
+				if err := yaml.Unmarshal([]byte(parts[0]), &dstFrontMatter); err != nil {
+					return fmt.Errorf("failed to parse target file front matter: %v", err)
+				}
+				if translated, ok := dstFrontMatter["translated"].(bool); ok && translated {
+					if !force {
+						fmt.Printf("Skipping %s (already translated, use -F to force translate)\n", srcPath)
+						return nil
+					}
+					fmt.Printf("Force translating %s\n", srcPath)
+				}
+			}
+		}
 	}
 
 	// 读取源文件内容
@@ -212,28 +238,6 @@ func ProcessFile(srcPath, dstPath, targetLang string, cfg *config.Config, format
 				return fmt.Errorf("failed to parse front matter: %v", err)
 			}
 			contentToTranslate = parts[1]
-		}
-	}
-
-	// 检查目标文件是否已经存在且已翻译
-	if _, err := os.Stat(dstPath); err == nil {
-		dstContent, err := os.ReadFile(dstPath)
-		if err != nil {
-			return fmt.Errorf("failed to read target file: %v", err)
-		}
-
-		var dstFrontMatter map[string]interface{}
-		if strings.HasPrefix(string(dstContent), "---\n") {
-			parts := strings.SplitN(string(dstContent)[4:], "\n---\n", 2)
-			if len(parts) == 2 {
-				if err := yaml.Unmarshal([]byte(parts[0]), &dstFrontMatter); err != nil {
-					return fmt.Errorf("failed to parse target file front matter: %v", err)
-				}
-				if translated, ok := dstFrontMatter["translated"].(bool); ok && translated {
-					// 目标文件已经翻译过，跳过
-					return nil
-				}
-			}
 		}
 	}
 
@@ -338,7 +342,7 @@ func ProcessDirectory(srcDir, dstDir string, targetLang string, cfg *config.Conf
 		})
 
 		// 处理文件
-		if err := ProcessFile(path, dstPath, targetLang, cfg, format); err != nil {
+		if err := ProcessFile(path, dstPath, targetLang, cfg, format, force); err != nil {
 			return fmt.Errorf("failed to process file %s: %v", path, err)
 		}
 
