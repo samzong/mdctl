@@ -2,7 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"mdctl/internal/processor"
+
+	"github.com/samzong/mdctl/internal/processor"
 
 	"github.com/spf13/cobra"
 )
