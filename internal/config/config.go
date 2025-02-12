@@ -17,7 +17,7 @@ type Config struct {
 }
 
 var DefaultConfig = Config{
-	TranslatePrompt:   "Please translate the following markdown content to {TARGET_LANG}. Keep the original markdown format and front matter unchanged. Do not add any additional markdown code blocks or backticks. Translate the content directly:",
+	TranslatePrompt:   "Translate the markdown to {TARGET_LANG} as a native speaker - preserve code/YAML/links/cli commands (e.g. `kubectl apply` or `pip install langchain`) and tech terms (CRDs, Helm charts, RAG). Output ONLY fluently localized text with natural technical phrasing that doesn't read machine-generated.",
 	OpenAIEndpointURL: "https://api.openai.com/v1",
 	OpenAIAPIKey:      "",
 	ModelName:         "gpt-3.5-turbo",
