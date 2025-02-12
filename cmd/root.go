@@ -8,14 +8,15 @@ import (
 )
 
 var (
-	version = "dev"
+	Version   = "dev"
+	BuildTime = "unknown"
 
 	rootCmd = &cobra.Command{
 		Use:   "mdctl",
 		Short: "A CLI tool for markdown file operations",
 		Long: `mdctl is a CLI tool that helps you manage and process markdown files.
 Currently supports downloading remote images and more features to come.`,
-		Version: version,
+		Version: fmt.Sprintf("%s (built at %s)", Version, BuildTime),
 	}
 )
 

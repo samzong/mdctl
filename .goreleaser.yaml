@@ -16,7 +16,7 @@ builds:
       - goos: windows
         goarch: arm64
     ldflags:
-      - -s -w -X main.version={{.Version}}
+      - -s -w -X github.com/samzong/mdctl/cmd.Version={{.Version}} -X github.com/samzong/mdctl/cmd.BuildTime={{.Date}}
     binary: mdctl
 
 archives:
