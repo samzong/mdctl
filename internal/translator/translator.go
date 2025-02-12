@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -101,6 +102,16 @@ func New(cfg *config.Config, format bool) *Translator {
 	}
 }
 
+var (
+	// RegexPatterns defines patterns for removing special content blocks
+	RegexPatterns = []struct {
+		Pattern string
+		Replace string
+	}{
+		{`(?s)<think>.*?</think>\n?`, ""}, // Remove ollama deepthink thinking process
+	}
+)
+
 // TranslateContent translates the content
 func (t *Translator) TranslateContent(content string, lang string) (string, error) {
 	// Remove potential front matter
@@ -157,10 +168,13 @@ func (t *Translator) TranslateContent(content string, lang string) (string, erro
 	// Get translated content
 	translatedContent := response.Choices[0].Message.Content
 
+	// Remove special content blocks
+	for _, pattern := range RegexPatterns {
+		translatedContent = regexp.MustCompile(pattern.Pattern).ReplaceAllString(translatedContent, pattern.Replace)
+	}
+
 	// Remove potential markdown code block markers
-	translatedContent = strings.TrimPrefix(translatedContent, "```markdown\n")
-	translatedContent = strings.TrimSuffix(translatedContent, "\n```")
-	translatedContent = strings.TrimSpace(translatedContent)
+	translatedContent = strings.TrimPrefix(translatedContent, "\n")
 
 	// If formatting is enabled, format the translated content
 	if t.format {

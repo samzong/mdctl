@@ -34,10 +34,9 @@ var translateCmd = &cobra.Command{
 	Long: `Translate markdown files or directories to specified language using AI models.
 
 Supported AI Models:
-  - OpenAI API (Current)
-  - Ollama (Coming Soon)
-  - Google Gemini (Coming Soon)
-  - Anthropic Claude (Coming Soon)
+  - OpenAI (Current)
+  - DeepSeek R1 (Current)
+  - Llama (Current)
 	
 Supported Languages:
   ar (العربية), de (Deutsch), en (English), es (Español), fr (Français),
