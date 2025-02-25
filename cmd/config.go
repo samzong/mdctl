@@ -142,6 +142,4 @@ func init() {
 
 	configGetCmd.Flags().StringVarP(&configKey, "key", "k", "", "Configuration key to get")
 	configGetCmd.MarkFlagRequired("key")
-
-	rootCmd.AddCommand(configCmd)
 }

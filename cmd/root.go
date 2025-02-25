@@ -26,3 +26,25 @@ func Execute() {
 		os.Exit(1)
 	}
 }
+
+func init() {
+	// Add commands first
+	rootCmd.AddCommand(translateCmd)
+	rootCmd.AddCommand(downloadCmd)
+	rootCmd.AddCommand(configCmd)
+
+	// Then add groups and set group IDs
+	rootCmd.AddGroup(&cobra.Group{
+		ID:    "core",
+		Title: "Core Commands:",
+	})
+	rootCmd.AddGroup(&cobra.Group{
+		ID:    "config",
+		Title: "Configuration Commands:",
+	})
+
+	// Set group for each command
+	translateCmd.GroupID = "core"
+	downloadCmd.GroupID = "core"
+	configCmd.GroupID = "config"
+}

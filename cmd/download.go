@@ -39,6 +39,4 @@ func init() {
 	downloadCmd.Flags().StringVarP(&sourceFile, "file", "f", "", "Source markdown file to process")
 	downloadCmd.Flags().StringVarP(&sourceDir, "dir", "d", "", "Source directory containing markdown files to process")
 	downloadCmd.Flags().StringVarP(&imageOutputDir, "output", "o", "", "Output directory for downloaded images (optional)")
-
-	rootCmd.AddCommand(downloadCmd)
 }

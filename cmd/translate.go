@@ -119,8 +119,6 @@ Examples:
 }
 
 func init() {
-	rootCmd.AddCommand(translateCmd)
-
 	translateCmd.Flags().StringVarP(&fromPath, "from", "f", "", "Source file or directory path")
 	translateCmd.Flags().StringVarP(&toPath, "to", "t", "", "Target file or directory path (optional, default: generate in same directory as source)")
 	translateCmd.Flags().StringVarP(&locale, "locales", "l", "", "Target language code (e.g., zh, en, ja, ko, fr, de, es, etc.)")
