@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -339,7 +338,7 @@ func (u *Uploader) processFile(filePath string) error {
 
 		// Clean filename
 		nameWithoutExt = cleanFileName(nameWithoutExt)
-		remotePath := fmt.Sprintf("images/%s_%s%s", nameWithoutExt, hash[:8], ext)
+		remotePath := fmt.Sprintf("%s_%s%s", nameWithoutExt, hash[:8], ext)
 
 		// Record link replacement information
 		oldLink := fmt.Sprintf("![%s](%s)", imgAlt, imgURL)
@@ -510,7 +509,7 @@ func (u *Uploader) processResults() {
 		// Read file content
 		content, err := os.ReadFile(filePath)
 		if err != nil {
-			log.Printf("Error reading file %s for update: %v", filePath, err)
+			fmt.Printf("Error reading file %s for update: %v", filePath, err)
 			continue
 		}
 
@@ -533,7 +532,7 @@ func (u *Uploader) processResults() {
 		// Save updated file
 		if contentChanged && !u.Config.DryRun {
 			if err := os.WriteFile(filePath, []byte(newContent), 0644); err != nil {
-				log.Printf("Error writing updated file: %v\n", err)
+				fmt.Printf("Error writing updated file: %v\n", err)
 			} else {
 				u.stats.ChangedFiles++
 			}

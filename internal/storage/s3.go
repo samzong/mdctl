@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -62,7 +61,7 @@ func (p *S3Provider) Configure(cfg config.CloudConfig) error {
 
 	// If it's R2 but accountID not set, log a warning
 	if strings.ToLower(cfg.Provider) == "r2" && p.accountID == "" {
-		log.Printf("Warning: R2 account ID not set. r2.dev public URLs cannot be generated.")
+		fmt.Printf("Warning: R2 account ID not set. r2.dev public URLs cannot be generated.")
 	}
 
 	// Create AWS configuration

@@ -3,17 +3,14 @@
 
 # mdctl
 
-![logo](https://mdctl.samzong.me/blog/images/images/logo_5dde22d2.png)
-
 [English](README.md) | [中文版](README_zh.md)
 
-A command-line tool for processing Markdown files. Currently, it supports automatically downloading remote images to local storage and updating the image references in Markdown files, translating markdown files using AI models, and uploading local images to cloud storage.
+A command-line tool for processing Markdown files. Currently, it supports automatically downloading remote images to local storage and updating the image references in Markdown files, as well as translating markdown files using AI models.
 
 ## Features
 
 - Supports processing individual Markdown files or entire directories (including subdirectories).
 - Automatically downloads remote images to a specified local directory.
-- Uploads local images to cloud storage (S3, Cloudflare R2, MinIO, etc.).
 - Preserves original image filenames (where available).
 - Handles duplicate filenames automatically.
 - Updates image references in Markdown files using relative paths.
@@ -54,23 +51,6 @@ Specifying an output directory for images:
 mdctl download -f path/to/your/file.md -o path/to/images
 ```
 
-### Uploading Local Images to Cloud Storage
-
-Upload images from a single file to S3:
-```bash
-mdctl upload -f path/to/your/file.md -p s3 -b your-bucket-name
-```
-
-Upload images from a directory to Cloudflare R2 with a path prefix:
-```bash
-mdctl upload -d path/to/your/directory -p r2 -b your-bucket-name --prefix blog/
-```
-
-Use a custom domain for generated URLs:
-```bash
-mdctl upload -f path/to/your/file.md -p s3 -b your-bucket-name -c assets.yourdomain.com
-```
-
 ## Command Reference
 
 ### `download` Command
@@ -83,93 +63,6 @@ Parameters:
 - `-o, --output`: Specifies the directory for saving images (optional).
   - Default: `images` subdirectory within the file's directory (file mode).
   - Default: `images` subdirectory within the specified directory (directory mode).
-
-### `upload` Command
-
-Uploads local images in Markdown files to cloud storage and rewrites the URLs.
-
-Parameters:
-- `-f, --file`: Specifies the Markdown file to process.
-- `-d, --dir`: Specifies the directory to process (recursively processes all Markdown files).
-- `-p, --provider`: Cloud storage provider (s3, r2, minio).
-- `-b, --bucket`: Cloud storage bucket name.
-- `-c, --custom-domain`: Custom domain for generated URLs (optional).
-- `--prefix`: Path prefix for uploaded files (optional).
-- `--dry-run`: Preview changes without uploading (optional).
-- `--concurrency`: Number of concurrent uploads (default: 5).
-- `-F, --force`: Force upload even if file exists (optional).
-- `--skip-verify`: Skip SSL verification for self-signed certificates (optional).
-- `--ca-cert`: Path to CA certificate (optional).
-- `--conflict`: Conflict policy (rename, version, overwrite) (default: rename).
-- `--cache-dir`: Cache directory path (optional).
-- `--include`: Comma-separated list of file extensions to include (optional).
-
-### Configuration
-
-To configure cloud storage settings:
-
-```bash
-# Set cloud storage provider
-mdctl config set -k cloud_storage.provider -v "r2"
-
-# Set endpoint URL
-mdctl config set -k cloud_storage.endpoint -v "https://xxxx.r2.cloudflarestorage.com"
-
-# Set Cloudflare account ID (optional for R2, will be extracted from endpoint if not provided)
-mdctl config set -k cloud_storage.account_id -v "your-account-id"
-
-# Set access and secret keys
-mdctl config set -k cloud_storage.access_key -v "YOUR_ACCESS_KEY"
-mdctl config set -k cloud_storage.secret_key -v "YOUR_SECRET_KEY"
-
-# Set bucket name
-mdctl config set -k cloud_storage.bucket -v "my-images"
-
-# Set additional options
-mdctl config set -k cloud_storage.custom_domain -v "assets.yourdomain.com"
-mdctl config set -k cloud_storage.path_prefix -v "blog"
-mdctl config set -k cloud_storage.concurrency -v "10"
-mdctl config set -k cloud_storage.conflict_policy -v "rename"
-```
-
-### Multiple Cloud Storage Configurations
-
-mdctl supports managing multiple cloud storage configurations and switching between them:
-
-```bash
-# List all storage configurations
-mdctl config list-storages
-
-# Configure AWS S3 storage
-mdctl config set -k cloud_storages.my-s3.provider -v "s3"
-mdctl config set -k cloud_storages.my-s3.region -v "us-east-1"
-mdctl config set -k cloud_storages.my-s3.access_key -v "YOUR_AWS_ACCESS_KEY"
-mdctl config set -k cloud_storages.my-s3.secret_key -v "YOUR_AWS_SECRET_KEY"
-mdctl config set -k cloud_storages.my-s3.bucket -v "my-s3-bucket"
-
-# Configure Cloudflare R2 storage
-mdctl config set -k cloud_storages.my-r2.provider -v "r2"
-mdctl config set -k cloud_storages.my-r2.endpoint -v "https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com"
-mdctl config set -k cloud_storages.my-r2.account_id -v "YOUR_ACCOUNT_ID"
-mdctl config set -k cloud_storages.my-r2.access_key -v "YOUR_R2_ACCESS_KEY"
-mdctl config set -k cloud_storages.my-r2.secret_key -v "YOUR_R2_SECRET_KEY"
-mdctl config set -k cloud_storages.my-r2.bucket -v "my-r2-bucket"
-
-# Configure MinIO storage
-mdctl config set -k cloud_storages.my-minio.provider -v "minio"
-mdctl config set -k cloud_storages.my-minio.endpoint -v "http://localhost:9000"
-mdctl config set -k cloud_storages.my-minio.region -v "auto"
-mdctl config set -k cloud_storages.my-minio.access_key -v "minioadmin"
-mdctl config set -k cloud_storages.my-minio.secret_key -v "minioadmin"
-mdctl config set -k cloud_storages.my-minio.bucket -v "my-minio-bucket"
-
-# Set the default storage configuration
-mdctl config set-default-storage --name my-r2
-
-# Use a specific storage configuration for upload
-mdctl upload -f README.md --storage my-s3
-mdctl upload -d docs/ --storage my-minio
-```
 
 ## Translate Command
 
@@ -265,14 +158,11 @@ mdctl config list
 # Get a specific configuration value
 mdctl config get -k api_key
 mdctl config get -k model
-mdctl config get -k cloud_storage.provider
 
 # Set a configuration value
 mdctl config set -k api_key -v "your-api-key"
 mdctl config set -k model -v "gpt-4"
 mdctl config set -k temperature -v "0.8"
-mdctl config set -k cloud_storage.provider -v "s3"
-mdctl config set -k cloud_storage.bucket -v "my-bucket"
 ```
 
 ### Available Configuration Keys
@@ -283,27 +173,13 @@ mdctl config set -k cloud_storage.bucket -v "my-bucket"
 - `model`: The model to use for translation
 - `temperature`: Temperature setting for the model (0.0 to 1.0)
 - `top_p`: Top P setting for the model (0.0 to 1.0)
-- `cloud_storage.provider`: Cloud storage provider (s3, r2, minio)
-- `cloud_storage.region`: Region for the cloud provider
-- `cloud_storage.endpoint`: Endpoint URL for the cloud provider
-- `cloud_storage.access_key`: Access key for the cloud provider
-- `cloud_storage.secret_key`: Secret key for the cloud provider
-- `cloud_storage.bucket`: Bucket name
-- `cloud_storage.custom_domain`: Custom domain for generated URLs
-- `cloud_storage.path_prefix`: Path prefix for uploaded files
-- `cloud_storage.concurrency`: Number of concurrent uploads
-- `cloud_storage.skip_verify`: Whether to skip SSL verification
-- `cloud_storage.ca_cert_path`: Path to CA certificate
-- `cloud_storage.conflict_policy`: Conflict policy (rename, version, overwrite)
-- `cloud_storage.cache_dir`: Cache directory path
 
 ## Notes
 
 1. `-f` and `-d` parameters cannot be used together
 2. If no output directory is specified, the tool will automatically create a default `images` directory
-3. Only remote images (http/https) will be processed by the download command
-4. Only local images will be processed by the upload command
-5. Image filenames will retain their original names, if duplicates occur, a hash of the URL will be added as a suffix
+3. Only remote images (http/https) will be processed, local image references will not be modified
+4. Image filenames will retain their original names, if duplicates occur, a hash of the URL will be added as a suffix
 
 ## License
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fsamzong%2Fmdctl.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fsamzong%2Fmdctl?ref=badge_large)
