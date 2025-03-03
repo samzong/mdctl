@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mdctl</title>
+    <meta name="description" content="Add a new feature to mdctl that uploads local images in markdown files to cloud storage services (S3-compatible APIs lik">
+    <meta name="keywords" content="Markdown processor,CLI tool,Image downloader,Markdown translator,AI translation,Markdown automation,Remote image handling,Markdown utilities,AI-powered Markdown,Markdown enhancement,Markdown file management">
+    <link rel="stylesheet" type="text/css" href="css/main.css?v=1.34.1">
+    <link rel="stylesheet" type="text/css" href="css/tocbot.css?v=1.34.1">
+    <link rel="stylesheet" type="text/css" href="css/media.css?v=1.34.1">
+    <link rel="stylesheet" type="text/css" href="css/sidebar.css?v=1.34.1">
+    <link rel="stylesheet" type="text/css" href="css/copy.css?v=1.34.1">
+    <link rel="stylesheet" type="text/css" href="css/demo-preview.css?v=1.34.1">
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+    <script src="js/copy.js?v=1.34.1"></script>
+    <script src="js/dark-mode.js?v=1.34.1"></script>
+    <script src="js/markdown-style.js?v=1.34.1"></script>
+  </head>
+  <body id="idoctotop"><a href="#idoctotop" class="gototop">top</a>
+    <header class="header">
+      <article class="inner warpper" style="max-width:720px;"><a class="logo" href="index.html"><img alt="mdctl logo" src="assets/icon.png">
+<span class="title">mdctl</span></a>
+        <div class="content">
+          <ul class="menu">
+            <li><a href="index.html" target="" class="">Home</a></li>
+            <li><a href="https://github.com/samzong" target="__blank" class="">About</a></li>
+          </ul><a href="https://github.com/samzong/mdctl" target="_blank" rel="noopener noreferrer" title="Github" name="Github" class="github"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+            </svg></a>
+          <dark-mode permanent=""></dark-mode>
+        </div>
+      </article>
+    </header>
+    <div style="max-width:720px;" class="warpper-content warpper notocs">
+      <markdown-style theme-auto-switch-disabled="">
+        <h2 id="design-document-image-upload-feature-for-mdctl"><a aria-hidden="true" tabindex="-1" href="#design-document-image-upload-feature-for-mdctl" class="anchor"><span class="icon icon-link"></span></a>Design Document: Image Upload Feature for mdctl</h2>
+        <h3 id="overview"><a aria-hidden="true" tabindex="-1" href="#overview" class="anchor"><span class="icon icon-link"></span></a>Overview</h3>
+        <p>Add a new feature to mdctl that uploads local images in markdown files to cloud storage services (S3-compatible APIs like Cloudflare R2, AWS S3, etc.) and rewrites the URLs in the markdown content.</p>
+        <h3 id="goals"><a aria-hidden="true" tabindex="-1" href="#goals" class="anchor"><span class="icon icon-link"></span></a>Goals</h3>
+        <ol>
+          <li>Upload local images to cloud storage services</li>
+          <li>Support multiple storage providers with S3-compatible APIs</li>
+          <li>Rewrite image URLs in markdown files to point to the cloud storage</li>
+          <li>Maintain the existing design patterns and code structure</li>
+          <li>Implement idempotent operations with content verification</li>
+          <li>Support concurrent uploads for performance optimization</li>
+          <li>Handle custom SSL certificates for various cloud providers</li>
+        </ol>
+        <h3 id="architecture"><a aria-hidden="true" tabindex="-1" href="#architecture" class="anchor"><span class="icon icon-link"></span></a>Architecture</h3>
+        <p>Following the existing architecture pattern of mdctl, the upload feature will be implemented with these components:</p>
+        <h4 id="1-command-layer-cmduploadgo"><a aria-hidden="true" tabindex="-1" href="#1-command-layer-cmduploadgo" class="anchor"><span class="icon icon-link"></span></a>1. Command Layer (<code>cmd/upload.go</code>)</h4>
+        <ul>
+          <li>
+            <p>Define CLI parameters:</p>
+            <ul>
+              <li>Source file/directory (<code>-f/--file</code> or <code>-d/--dir</code>)</li>
+              <li>Cloud provider (<code>-p/--provider</code>)</li>
+              <li>Bucket name (<code>-b/--bucket</code>)</li>
+              <li>Custom domain (optional, <code>-c/--custom-domain</code>)</li>
+              <li>Path prefix (optional, <code>--prefix</code>)</li>
+              <li>File extensions to include (optional, <code>--include</code>)</li>
+              <li>Dry run mode (optional, <code>--dry-run</code>)</li>
+              <li>Concurrency level (optional, <code>--concurrency</code>)</li>
+              <li>Force upload (optional, <code>-F/--force</code>)</li>
+              <li>Skip SSL verification (optional, <code>--skip-verify</code>)</li>
+              <li>CA certificate path (optional, <code>--ca-cert</code>)</li>
+              <li>Conflict policy (optional, <code>--conflict=rename|version|overwrite</code>)</li>
+              <li>Cache directory (optional, <code>--cache-dir</code>)</li>
+            </ul>
+          </li>
+          <li>
+            <p>Validate input parameters</p>
+          </li>
+          <li>
+            <p>Create and configure uploader component</p>
+          </li>
+          <li>
+            <p>Add to the "core" command group alongside download and translate</p>
+          </li>
+        </ul>
+        <h4 id="2-uploader-module-internaluploaderuploadergo"><a aria-hidden="true" tabindex="-1" href="#2-uploader-module-internaluploaderuploadergo" class="anchor"><span class="icon icon-link"></span></a>2. Uploader Module (<code>internal/uploader/uploader.go</code>)</h4>
+        <ul>
+          <li>Core business logic for uploading files</li>
+          <li>Methods for:
+            <ul>
+              <li>Processing single files or directories recursively</li>
+              <li>Identifying local images in markdown</li>
+              <li>Uploading files to cloud storage</li>
+              <li>Rewriting URLs in markdown content</li>
+              <li>Generating appropriate cloud storage paths</li>
+              <li>Managing the worker pool for concurrent uploads</li>
+              <li>Tracking upload progress with statistics</li>
+              <li>Calculating and verifying content hashes</li>
+              <li>Handling conflict resolution</li>
+              <li>Managing the local cache of uploaded files</li>
+            </ul>
+          </li>
+        </ul>
+        <h4 id="3-storage-provider-interface-internalstorageprovidergo"><a aria-hidden="true" tabindex="-1" href="#3-storage-provider-interface-internalstorageprovidergo" class="anchor"><span class="icon icon-link"></span></a>3. Storage Provider Interface (<code>internal/storage/provider.go</code>)</h4>
+        <ul>
+          <li>Define a provider interface with methods:
+            <ul>
+              <li><code>Upload(localPath, remotePath string, metadata map[string]string) (url string, err error)</code></li>
+              <li><code>Configure(config CloudConfig) error</code></li>
+              <li><code>GetPublicURL(remotePath string) string</code></li>
+              <li><code>ObjectExists(remotePath string) (bool, error)</code></li>
+              <li><code>CompareHash(remotePath, localHash string) (bool, error)</code></li>
+              <li><code>SetObjectMetadata(remotePath string, metadata map[string]string) error</code></li>
+              <li><code>GetObjectMetadata(remotePath string) (map[string]string, error)</code></li>
+            </ul>
+          </li>
+        </ul>
+        <h4 id="4-storage-provider-implementations"><a aria-hidden="true" tabindex="-1" href="#4-storage-provider-implementations" class="anchor"><span class="icon icon-link"></span></a>4. Storage Provider Implementations</h4>
+        <ul>
+          <li>S3-compatible provider (<code>internal/storage/s3.go</code>):
+            <ul>
+              <li>Implementation for AWS S3, Cloudflare R2, Minio, etc.</li>
+              <li>Configure region, endpoint, credentials</li>
+              <li>Handle authentication and uploads</li>
+              <li>Support custom certificates and SSL verification options</li>
+              <li>Implement content verification with ETag/MD5 hash comparison</li>
+              <li>Support object tagging for metadata</li>
+            </ul>
+          </li>
+        </ul>
+        <h4 id="5-cache-management-internalcachecachego"><a aria-hidden="true" tabindex="-1" href="#5-cache-management-internalcachecachego" class="anchor"><span class="icon icon-link"></span></a>5. Cache Management (<code>internal/cache/cache.go</code>)</h4>
+        <ul>
+          <li>Maintain record of uploaded files with their hash values</li>
+          <li>Cache structure with file path, remote URL, and hash</li>
+          <li>Support for serializing/deserializing cache to disk</li>
+          <li>Methods for lookup, update, and verification</li>
+        </ul>
+        <h4 id="6-configuration-extensions-internalconfigconfiggo"><a aria-hidden="true" tabindex="-1" href="#6-configuration-extensions-internalconfigconfiggo" class="anchor"><span class="icon icon-link"></span></a>6. Configuration Extensions (<code>internal/config/config.go</code>)</h4>
+        <p>Add new configuration fields:</p>
+        <pre class="language-go"><code class="language-go code-highlight"><span class="code-line line-number" line="1"><span class="token keyword">type</span> CloudConfig <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+</span><span class="code-line line-number" line="2">    Provider       <span class="token builtin">string</span>            <span class="token string">`json:"provider"`</span>
+</span><span class="code-line line-number" line="3">    Region         <span class="token builtin">string</span>            <span class="token string">`json:"region"`</span>
+</span><span class="code-line line-number" line="4">    Endpoint       <span class="token builtin">string</span>            <span class="token string">`json:"endpoint"`</span>
+</span><span class="code-line line-number" line="5">    AccessKey      <span class="token builtin">string</span>            <span class="token string">`json:"access_key"`</span>
+</span><span class="code-line line-number" line="6">    SecretKey      <span class="token builtin">string</span>            <span class="token string">`json:"secret_key"`</span>
+</span><span class="code-line line-number" line="7">    Bucket         <span class="token builtin">string</span>            <span class="token string">`json:"bucket"`</span>
+</span><span class="code-line line-number" line="8">    CustomDomain   <span class="token builtin">string</span>            <span class="token string">`json:"custom_domain,omitempty"`</span>
+</span><span class="code-line line-number" line="9">    PathPrefix     <span class="token builtin">string</span>            <span class="token string">`json:"path_prefix,omitempty"`</span>
+</span><span class="code-line line-number" line="10">    ProviderOpts   <span class="token keyword">map</span><span class="token punctuation">[</span><span class="token builtin">string</span><span class="token punctuation">]</span><span class="token builtin">string</span> <span class="token string">`json:"provider_opts,omitempty"`</span>
+</span><span class="code-line line-number" line="11">    Concurrency    <span class="token builtin">int</span>               <span class="token string">`json:"concurrency"`</span>
+</span><span class="code-line line-number" line="12">    SkipVerify     <span class="token builtin">bool</span>              <span class="token string">`json:"skip_verify"`</span>
+</span><span class="code-line line-number" line="13">    CACertPath     <span class="token builtin">string</span>            <span class="token string">`json:"ca_cert_path,omitempty"`</span>
+</span><span class="code-line line-number" line="14">    ConflictPolicy <span class="token builtin">string</span>            <span class="token string">`json:"conflict_policy"`</span>
+</span><span class="code-line line-number" line="15">    CacheDir       <span class="token builtin">string</span>            <span class="token string">`json:"cache_dir,omitempty"`</span>
+</span><span class="code-line line-number" line="16"><span class="token punctuation">}</span>
+</span><span class="code-line line-number" line="17">
+</span><span class="code-line line-number" line="18"><span class="token comment">// Add to Config struct</span>
+</span><span class="code-line line-number" line="19"><span class="token keyword">type</span> Config <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+</span><span class="code-line line-number" line="20">    <span class="token comment">// Existing fields...</span>
+</span><span class="code-line line-number" line="21">    CloudStorage CloudConfig <span class="token string">`json:"cloud_storage"`</span>
+</span><span class="code-line line-number" line="22"><span class="token punctuation">}</span>
+</span></code><input type="hidden" value="type CloudConfig struct {
+    Provider       string            &#x60;json:&#x22;provider&#x22;&#x60;
+    Region         string            &#x60;json:&#x22;region&#x22;&#x60;
+    Endpoint       string            &#x60;json:&#x22;endpoint&#x22;&#x60;
+    AccessKey      string            &#x60;json:&#x22;access_key&#x22;&#x60;
+    SecretKey      string            &#x60;json:&#x22;secret_key&#x22;&#x60;
+    Bucket         string            &#x60;json:&#x22;bucket&#x22;&#x60;
+    CustomDomain   string            &#x60;json:&#x22;custom_domain,omitempty&#x22;&#x60;
+    PathPrefix     string            &#x60;json:&#x22;path_prefix,omitempty&#x22;&#x60;
+    ProviderOpts   map[string]string &#x60;json:&#x22;provider_opts,omitempty&#x22;&#x60;
+    Concurrency    int               &#x60;json:&#x22;concurrency&#x22;&#x60;
+    SkipVerify     bool              &#x60;json:&#x22;skip_verify&#x22;&#x60;
+    CACertPath     string            &#x60;json:&#x22;ca_cert_path,omitempty&#x22;&#x60;
+    ConflictPolicy string            &#x60;json:&#x22;conflict_policy&#x22;&#x60;
+    CacheDir       string            &#x60;json:&#x22;cache_dir,omitempty&#x22;&#x60;
+}
+
+// Add to Config struct
+type Config struct {
+    // Existing fields...
+    CloudStorage CloudConfig &#x60;json:&#x22;cloud_storage&#x22;&#x60;
+}
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <h3 id="implementation-plan"><a aria-hidden="true" tabindex="-1" href="#implementation-plan" class="anchor"><span class="icon icon-link"></span></a>Implementation Plan</h3>
+        <ol>
+          <li>Add cloud storage config section to config.go</li>
+          <li>Implement cache management module</li>
+          <li>Create storage provider interface</li>
+          <li>Implement S3-compatible provider with SSL handling</li>
+          <li>Create worker pool for concurrent uploads</li>
+          <li>Create uploader module implementation with verification logic</li>
+          <li>Implement idempotency and conflict resolution strategies</li>
+          <li>Add upload command to cmd package</li>
+          <li>Create comprehensive tests</li>
+          <li>Update help text and documentation</li>
+          <li>Add sample usage to README</li>
+        </ol>
+        <h3 id="command-usage-examples"><a aria-hidden="true" tabindex="-1" href="#command-usage-examples" class="anchor"><span class="icon icon-link"></span></a>Command Usage Examples</h3>
+        <pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line line-number" line="1"><span class="token comment"># Upload images from a single file</span>
+</span><span class="code-line line-number" line="2">mdctl upload <span class="token parameter variable">-f</span> path/to/file.md <span class="token parameter variable">-p</span> s3 <span class="token parameter variable">-b</span> my-bucket
+</span><span class="code-line line-number" line="3">
+</span><span class="code-line line-number" line="4"><span class="token comment"># Upload images from a directory</span>
+</span><span class="code-line line-number" line="5">mdctl upload <span class="token parameter variable">-d</span> path/to/dir <span class="token parameter variable">-p</span> r2 <span class="token parameter variable">-b</span> my-images <span class="token parameter variable">--prefix</span> blog/
+</span><span class="code-line line-number" line="6">
+</span><span class="code-line line-number" line="7"><span class="token comment"># Use with a custom domain</span>
+</span><span class="code-line line-number" line="8">mdctl upload <span class="token parameter variable">-f</span> post.md <span class="token parameter variable">-p</span> s3 <span class="token parameter variable">-b</span> media-bucket <span class="token parameter variable">-c</span> assets.example.com
+</span><span class="code-line line-number" line="9">
+</span><span class="code-line line-number" line="10"><span class="token comment"># Use custom concurrency setting</span>
+</span><span class="code-line line-number" line="11">mdctl upload <span class="token parameter variable">-f</span> blog-post.md <span class="token parameter variable">-p</span> s3 <span class="token parameter variable">-b</span> my-bucket <span class="token parameter variable">--concurrency</span> <span class="token number">10</span>
+</span><span class="code-line line-number" line="12">
+</span><span class="code-line line-number" line="13"><span class="token comment"># Force upload (bypass hash verification)</span>
+</span><span class="code-line line-number" line="14">mdctl upload <span class="token parameter variable">-f</span> readme.md <span class="token parameter variable">-p</span> r2 <span class="token parameter variable">-b</span> my-images <span class="token parameter variable">-F</span>
+</span><span class="code-line line-number" line="15">
+</span><span class="code-line line-number" line="16"><span class="token comment"># Specify conflict resolution strategy</span>
+</span><span class="code-line line-number" line="17">mdctl upload <span class="token parameter variable">-d</span> docs/ <span class="token parameter variable">-p</span> s3 <span class="token parameter variable">-b</span> media <span class="token parameter variable">--conflict</span><span class="token operator">=</span>version
+</span><span class="code-line line-number" line="18">
+</span><span class="code-line line-number" line="19"><span class="token comment"># Use custom SSL certificate</span>
+</span><span class="code-line line-number" line="20">mdctl upload <span class="token parameter variable">-f</span> doc.md <span class="token parameter variable">-p</span> s3 <span class="token parameter variable">-b</span> media --ca-cert /path/to/cert.pem
+</span><span class="code-line line-number" line="21">
+</span><span class="code-line line-number" line="22"><span class="token comment"># Skip SSL verification for self-signed certificates</span>
+</span><span class="code-line line-number" line="23">mdctl upload <span class="token parameter variable">-f</span> doc.md <span class="token parameter variable">-p</span> minio <span class="token parameter variable">-b</span> <span class="token builtin class-name">local</span> --skip-verify
+</span><span class="code-line line-number" line="24">
+</span><span class="code-line line-number" line="25"><span class="token comment"># Configure cloud provider</span>
+</span><span class="code-line line-number" line="26">mdctl config <span class="token builtin class-name">set</span> <span class="token parameter variable">-k</span> cloud_storage.provider <span class="token parameter variable">-v</span> <span class="token string">"r2"</span>
+</span><span class="code-line line-number" line="27">mdctl config <span class="token builtin class-name">set</span> <span class="token parameter variable">-k</span> cloud_storage.endpoint <span class="token parameter variable">-v</span> <span class="token string">"https://xxxx.r2.cloudflarestorage.com"</span>
+</span><span class="code-line line-number" line="28">mdctl config <span class="token builtin class-name">set</span> <span class="token parameter variable">-k</span> cloud_storage.access_key <span class="token parameter variable">-v</span> <span class="token string">"YOUR_ACCESS_KEY"</span>
+</span><span class="code-line line-number" line="29">mdctl config <span class="token builtin class-name">set</span> <span class="token parameter variable">-k</span> cloud_storage.secret_key <span class="token parameter variable">-v</span> <span class="token string">"YOUR_SECRET_KEY"</span>
+</span><span class="code-line line-number" line="30">mdctl config <span class="token builtin class-name">set</span> <span class="token parameter variable">-k</span> cloud_storage.bucket <span class="token parameter variable">-v</span> <span class="token string">"my-images"</span>
+</span><span class="code-line line-number" line="31">mdctl config <span class="token builtin class-name">set</span> <span class="token parameter variable">-k</span> cloud_storage.concurrency <span class="token parameter variable">-v</span> <span class="token number">5</span>
+</span><span class="code-line line-number" line="32">mdctl config <span class="token builtin class-name">set</span> <span class="token parameter variable">-k</span> cloud_storage.conflict_policy <span class="token parameter variable">-v</span> <span class="token string">"rename"</span>
+</span></code><input type="hidden" value="# Upload images from a single file
+mdctl upload -f path/to/file.md -p s3 -b my-bucket
+
+# Upload images from a directory
+mdctl upload -d path/to/dir -p r2 -b my-images --prefix blog/
+
+# Use with a custom domain
+mdctl upload -f post.md -p s3 -b media-bucket -c assets.example.com
+
+# Use custom concurrency setting
+mdctl upload -f blog-post.md -p s3 -b my-bucket --concurrency 10
+
+# Force upload (bypass hash verification)
+mdctl upload -f readme.md -p r2 -b my-images -F
+
+# Specify conflict resolution strategy
+mdctl upload -d docs/ -p s3 -b media --conflict=version
+
+# Use custom SSL certificate
+mdctl upload -f doc.md -p s3 -b media --ca-cert /path/to/cert.pem
+
+# Skip SSL verification for self-signed certificates
+mdctl upload -f doc.md -p minio -b local --skip-verify
+
+# Configure cloud provider
+mdctl config set -k cloud_storage.provider -v &#x22;r2&#x22;
+mdctl config set -k cloud_storage.endpoint -v &#x22;https://xxxx.r2.cloudflarestorage.com&#x22;
+mdctl config set -k cloud_storage.access_key -v &#x22;YOUR_ACCESS_KEY&#x22;
+mdctl config set -k cloud_storage.secret_key -v &#x22;YOUR_SECRET_KEY&#x22;
+mdctl config set -k cloud_storage.bucket -v &#x22;my-images&#x22;
+mdctl config set -k cloud_storage.concurrency -v 5
+mdctl config set -k cloud_storage.conflict_policy -v &#x22;rename&#x22;
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <h3 id="technical-considerations"><a aria-hidden="true" tabindex="-1" href="#technical-considerations" class="anchor"><span class="icon icon-link"></span></a>Technical Considerations</h3>
+        <ol>
+          <li><strong>S3 SDK</strong>: Use the AWS SDK for Go to interact with S3-compatible APIs</li>
+          <li><strong>Image Processing</strong>: Optional compression/resizing before upload</li>
+          <li><strong>Error Handling</strong>: Provide detailed error messages for failed uploads</li>
+          <li><strong>URL Generation</strong>:
+            <ul>
+              <li>Support both direct S3 URLs or custom domain URLs</li>
+              <li>Handle path prefixing correctly</li>
+            </ul>
+          </li>
+          <li><strong>Idempotency &#x26; Verification</strong>:
+            <ul>
+              <li>Calculate content hashes (MD5/SHA) for each file</li>
+              <li>Store metadata in the object tags for verification</li>
+              <li>Skip uploads for identical content (check hash before upload)</li>
+              <li>Optional force upload flag to override verification</li>
+              <li>Maintain a local cache of uploaded files with their hashes</li>
+            </ul>
+          </li>
+          <li><strong>Concurrency &#x26; Reliability</strong>:
+            <ul>
+              <li>Implement worker pool for parallel uploads</li>
+              <li>Configurable concurrency level (default: 5)</li>
+              <li>Progress tracking for concurrent operations</li>
+              <li>Built-in retry mechanism for failed uploads (hardcoded 3 retry attempts)</li>
+              <li>Exponential backoff between retries (starting at 1s, doubling each retry)</li>
+              <li>Standard timeout for upload operations</li>
+            </ul>
+          </li>
+          <li><strong>SSL/Certificate Handling</strong>:
+            <ul>
+              <li>Support custom CA certificates</li>
+              <li>Option to skip verification for self-signed certificates</li>
+              <li>Configurable TLS settings per provider</li>
+            </ul>
+          </li>
+          <li><strong>Conflict Resolution</strong>:
+            <ul>
+              <li>Strategies for handling name collisions (rename, version, overwrite)</li>
+              <li>Option to preserve original filenames or use hashed names</li>
+            </ul>
+          </li>
+          <li><strong>Incremental Uploads</strong>:
+            <ul>
+              <li>Track already uploaded files to avoid redundant operations</li>
+              <li>Support for resuming interrupted batch uploads</li>
+            </ul>
+          </li>
+        </ol>
+        <h3 id="testing-strategy"><a aria-hidden="true" tabindex="-1" href="#testing-strategy" class="anchor"><span class="icon icon-link"></span></a>Testing Strategy</h3>
+        <ol>
+          <li>Unit tests for URL parsing and rewriting</li>
+          <li>Mocked storage provider for testing upload logic</li>
+          <li>Verification tests for hash calculation and comparison</li>
+          <li>Concurrency tests to ensure worker pool functions correctly</li>
+          <li>SSL/TLS configuration tests with mock certificates</li>
+          <li>Cache management tests for serialization/deserialization</li>
+          <li>Conflict resolution strategy tests</li>
+          <li>Integration tests with a local MinIO server</li>
+          <li>End-to-end tests with actual markdown files</li>
+          <li>Idempotency tests to verify repeated executions</li>
+          <li>Performance benchmarks for concurrent uploads</li>
+        </ol>
+      </markdown-style>
+    </div>
+    <script src="js/demo-preview.js?v=1.34.1"></script>
+    <div class="footer warpper" style="max-width:720px;">Released under the MIT License. Copyright © 2025 Kenny Wong<br>Generated by <a href="https://github.com/jaywcjlove/idoc" target="_blank">idoc</a> v1.34.1</div>
+    <script src="js/tocbot.js?v=1.34.1"></script>
+  </body>
+</html>
