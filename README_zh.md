@@ -1,7 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-# mdctl
-
 [English Version](README.md) | [中文版](README_zh.md)
 
 一个用于处理 Markdown 文件的命令行工具。目前支持自动下载远程图片到本地，更新 Markdown 文件中的图片引用路径，以及使用 AI 模型翻译 Markdown 文件。

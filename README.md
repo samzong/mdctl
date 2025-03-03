@@ -1,8 +1,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fsamzong%2Fmdctl.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fsamzong%2Fmdctl?ref=badge_shield)
 
-# mdctl
-
 [English](README.md) | [中文版](README_zh.md)
 
 A command-line tool for processing Markdown files. Currently, it supports automatically downloading remote images to local storage and updating the image references in Markdown files, as well as translating markdown files using AI models.
