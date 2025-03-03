@@ -1,10 +1,10 @@
-# Design Document: Image Upload Feature for mdctl
+## Design Document: Image Upload Feature for mdctl
 
-## Overview
+### Overview
 
 Add a new feature to mdctl that uploads local images in markdown files to cloud storage services (S3-compatible APIs like Cloudflare R2, AWS S3, etc.) and rewrites the URLs in the markdown content.
 
-## Goals
+### Goals
 
 1. Upload local images to cloud storage services
 2. Support multiple storage providers with S3-compatible APIs
@@ -14,11 +14,11 @@ Add a new feature to mdctl that uploads local images in markdown files to cloud 
 6. Support concurrent uploads for performance optimization
 7. Handle custom SSL certificates for various cloud providers
 
-## Architecture
+### Architecture
 
 Following the existing architecture pattern of mdctl, the upload feature will be implemented with these components:
 
-### 1. Command Layer (`cmd/upload.go`)
+#### 1. Command Layer (`cmd/upload.go`)
 
 - Define CLI parameters:
   - Source file/directory (`-f/--file` or `-d/--dir`)
@@ -39,7 +39,7 @@ Following the existing architecture pattern of mdctl, the upload feature will be
 - Create and configure uploader component
 - Add to the "core" command group alongside download and translate
 
-### 2. Uploader Module (`internal/uploader/uploader.go`)
+#### 2. Uploader Module (`internal/uploader/uploader.go`)
 
 - Core business logic for uploading files
 - Methods for:
@@ -54,7 +54,7 @@ Following the existing architecture pattern of mdctl, the upload feature will be
   - Handling conflict resolution
   - Managing the local cache of uploaded files
 
-### 3. Storage Provider Interface (`internal/storage/provider.go`)
+#### 3. Storage Provider Interface (`internal/storage/provider.go`)
 
 - Define a provider interface with methods:
   - `Upload(localPath, remotePath string, metadata map[string]string) (url string, err error)`
@@ -65,7 +65,7 @@ Following the existing architecture pattern of mdctl, the upload feature will be
   - `SetObjectMetadata(remotePath string, metadata map[string]string) error`
   - `GetObjectMetadata(remotePath string) (map[string]string, error)`
 
-### 4. Storage Provider Implementations
+#### 4. Storage Provider Implementations
 
 - S3-compatible provider (`internal/storage/s3.go`):
   - Implementation for AWS S3, Cloudflare R2, Minio, etc.
@@ -75,14 +75,14 @@ Following the existing architecture pattern of mdctl, the upload feature will be
   - Implement content verification with ETag/MD5 hash comparison
   - Support object tagging for metadata
 
-### 5. Cache Management (`internal/cache/cache.go`)
+#### 5. Cache Management (`internal/cache/cache.go`)
 
 - Maintain record of uploaded files with their hash values
 - Cache structure with file path, remote URL, and hash
 - Support for serializing/deserializing cache to disk
 - Methods for lookup, update, and verification
 
-### 6. Configuration Extensions (`internal/config/config.go`)
+#### 6. Configuration Extensions (`internal/config/config.go`)
 
 Add new configuration fields:
 ```go
@@ -110,7 +110,7 @@ type Config struct {
 }
 ```
 
-## Implementation Plan
+### Implementation Plan
 
 1. Add cloud storage config section to config.go
 2. Implement cache management module
@@ -124,7 +124,7 @@ type Config struct {
 10. Update help text and documentation
 11. Add sample usage to README
 
-## Command Usage Examples
+### Command Usage Examples
 
 ```bash
 # Upload images from a single file
@@ -161,7 +161,7 @@ mdctl config set -k cloud_storage.concurrency -v 5
 mdctl config set -k cloud_storage.conflict_policy -v "rename"
 ```
 
-## Technical Considerations
+### Technical Considerations
 
 1. **S3 SDK**: Use the AWS SDK for Go to interact with S3-compatible APIs
 2. **Image Processing**: Optional compression/resizing before upload
@@ -193,7 +193,7 @@ mdctl config set -k cloud_storage.conflict_policy -v "rename"
    - Track already uploaded files to avoid redundant operations
    - Support for resuming interrupted batch uploads
 
-## Testing Strategy
+### Testing Strategy
 
 1. Unit tests for URL parsing and rewriting
 2. Mocked storage provider for testing upload logic

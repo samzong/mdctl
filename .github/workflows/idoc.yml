@@ -1,0 +1,53 @@
+# 📖 Simple document generation tool! Dependence Node.js run.
+# https://github.com/jaywcjlove/idoc
+
+name: idoc
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Create idoc config.
+        run: |
+          cat > idoc.yml << EOF
+          site: mdctl
+          description: A command-line tool for processing Markdown files. Currently, it supports automatically downloading remote images to local storage and updating the image references in Markdown files, as well as translating markdown files using AI models.
+          keywords: Markdown processor,CLI tool,Image downloader,Markdown translator,AI translation,Markdown automation,Remote image handling,Markdown utilities,AI-powered Markdown,Markdown enhancement,Markdown file management
+          favicon: assets/favicon.ico
+          logo: assets/icon.png
+
+          openSource: https://github.com/samzong/mdctl
+
+          tocs: false
+
+          element:
+            wrapper: style=max-width:720px;
+
+          menus:
+            Home: index.html
+            About:
+              url: https://github.com/samzong
+              target: __blank
+          sideEffectFiles:
+            - README_zh.md
+          EOF
+
+      - run: npm install idoc@1 -g
+      - run: idoc
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          commit_message: ${{ github.event.head_commit.message }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
