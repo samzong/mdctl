@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/samzong/mdctl/internal/exporter/formats"
 	"github.com/samzong/mdctl/internal/exporter/sitereader"
 )
 
@@ -29,20 +30,19 @@ type ExportOptions struct {
 
 // Exporter defines exporter interface
 type Exporter interface {
-	Export(input string, output string, options ExportOptions) error
+	ExportFile(input string, output string, options ExportOptions) error
+	ExportDirectory(inputDir string, output string, options ExportOptions) error
 }
 
 // DefaultExporter is the default exporter implementation
 type DefaultExporter struct {
-	pandocPath string
-	logger     *log.Logger
+	logger *log.Logger
 }
 
 // NewExporter creates a new exporter
 func NewExporter() *DefaultExporter {
 	return &DefaultExporter{
-		pandocPath: "pandoc", // Default to pandoc in system PATH
-		logger:     log.New(os.Stdout, "[EXPORTER] ", log.LstdFlags),
+		logger: log.New(os.Stdout, "[EXPORTER] ", log.LstdFlags),
 	}
 }
 
@@ -91,15 +91,26 @@ func (e *DefaultExporter) ExportFile(input, output string, options ExportOptions
 	}
 	e.logger.Printf("Added source directory to resource paths: %s", sourceDir)
 
-	// Use Pandoc to export
-	e.logger.Println("Starting Pandoc export process...")
-	pandocExporter := &PandocExporter{
-		PandocPath: e.pandocPath,
-		Logger:     e.logger,
-	}
-	err := pandocExporter.Export(input, output, options)
+	// Get formatter for the specified format
+	e.logger.Printf("Getting formatter for format: %s", options.Format)
+	formatter, err := formats.GetFormatter(options.Format, e.logger)
 	if err != nil {
-		e.logger.Printf("Pandoc export failed: %s", err)
+		e.logger.Printf("Error getting formatter: %s", err)
+		return err
+	}
+	e.logger.Printf("Using formatter: %s", formatter.GetFormatName())
+
+	// Validate options
+	if err := formatter.ValidateOptions(convertOptions(options)); err != nil {
+		e.logger.Printf("Error validating options: %s", err)
+		return err
+	}
+
+	// Use formatter to export
+	e.logger.Println("Starting export process...")
+	err = formatter.Format(input, output, convertOptions(options))
+	if err != nil {
+		e.logger.Printf("Export failed: %s", err)
 		return err
 	}
 
@@ -251,61 +262,54 @@ func (e *DefaultExporter) ExportDirectory(inputDir, output string, options Expor
 	}
 
 	// Export merged file
-	e.logger.Println("Starting Pandoc export process...")
-	pandocExporter := &PandocExporter{
-		PandocPath: e.pandocPath,
-		Logger:     e.logger,
-	}
-	err = pandocExporter.Export(tempFilePath, output, options)
-	if err != nil {
-		e.logger.Printf("Pandoc export failed: %s", err)
-		return err
-	}
-
-	e.logger.Printf("Directory export completed successfully: %s", output)
-	return nil
+	e.logger.Println("Exporting merged file...")
+	return e.ExportFile(tempFilePath, output, options)
 }
 
-// SiteReader defines site reader interface
-type SiteReader interface {
-	// Detect if given directory is this type of site
-	Detect(dir string) bool
-	// Read site structure, return sorted list of files
-	ReadStructure(dir string, configPath string) ([]string, error)
-}
-
-// GetMarkdownFilesInDir gets all Markdown files in a directory and sorts them by filename
+// GetMarkdownFilesInDir returns a list of markdown files in a directory, sorted by name
 func GetMarkdownFilesInDir(dir string) ([]string, error) {
-	// Check if directory exists
-	info, err := os.Stat(dir)
-	if err != nil {
-		return nil, err
-	}
-	if !info.IsDir() {
-		return nil, fmt.Errorf("%s is not a directory", dir)
-	}
-
-	// Recursively find all Markdown files
 	var files []string
-	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			ext := strings.ToLower(filepath.Ext(path))
-			if ext == ".md" || ext == ".markdown" {
-				files = append(files, path)
-			}
-		}
-		return nil
-	})
 
+	// Read directory entries
+	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to walk directory %s: %s", dir, err)
+		return nil, fmt.Errorf("failed to read directory: %s", err)
 	}
 
-	// Sort by filename
+	// Filter markdown files
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		name := entry.Name()
+		if strings.HasSuffix(strings.ToLower(name), ".md") || strings.HasSuffix(strings.ToLower(name), ".markdown") {
+			files = append(files, filepath.Join(dir, name))
+		}
+	}
+
+	// Sort files by name
 	sort.Strings(files)
 
 	return files, nil
+}
+
+// convertOptions 将内部ExportOptions转换为formats.ExportOptions
+func convertOptions(options ExportOptions) formats.ExportOptions {
+	return formats.ExportOptions{
+		Template:            options.Template,
+		GenerateToc:         options.GenerateToc,
+		ShiftHeadingLevelBy: options.ShiftHeadingLevelBy,
+		FileAsTitle:         options.FileAsTitle,
+		Verbose:             options.Verbose,
+		Logger:              options.Logger,
+		SourceDirs:          options.SourceDirs,
+		TocDepth:            options.TocDepth,
+		NavPath:             options.NavPath,
+	}
+}
+
+// CheckPandocAvailability 检查 Pandoc 是否可用
+func CheckPandocAvailability() error {
+	return formats.CheckPandocAvailability()
 }

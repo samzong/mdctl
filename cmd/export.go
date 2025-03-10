@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/samzong/mdctl/internal/exporter"
+	"github.com/samzong/mdctl/internal/exporter/formats"
 	"github.com/spf13/cobra"
 )
 
@@ -65,7 +66,7 @@ Examples:
 
 			// Check if Pandoc is available
 			logger.Println("Checking Pandoc availability...")
-			if err := exporter.CheckPandocAvailability(); err != nil {
+			if err := formats.CheckPandocAvailability(); err != nil {
 				return err
 			}
 			logger.Println("Pandoc is available.")
@@ -123,4 +124,6 @@ func init() {
 	exportCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 	exportCmd.Flags().IntVar(&tocDepth, "toc-depth", 3, "Depth of table of contents (default 3)")
 	exportCmd.Flags().StringVarP(&navPath, "nav-path", "n", "", "Specify the navigation path to export (e.g. 'Section1/Subsection2')")
+
+	rootCmd.AddCommand(exportCmd)
 }
