@@ -33,6 +33,7 @@ func init() {
 	rootCmd.AddCommand(downloadCmd)
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(uploadCmd)
+	rootCmd.AddCommand(exportCmd)
 
 	// Then add groups and set group IDs
 	rootCmd.AddGroup(&cobra.Group{
@@ -48,5 +49,6 @@ func init() {
 	translateCmd.GroupID = "core"
 	downloadCmd.GroupID = "core"
 	uploadCmd.GroupID = "core"
+	exportCmd.GroupID = "core"
 	configCmd.GroupID = "config"
 }
