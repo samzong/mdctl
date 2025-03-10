@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export 功能设计文档 mdctl</title>
+    <meta name="description" content="为 mdctl 工具增加 export 子命令，用于将 Markdown 文件导出为其他格式。第一版将优先支持导出为 Word 文档格式（docx），后续可扩展支持更多格式（如 PDF、EPUB 等）。">
+    <meta name="keywords" content="Markdown processor,CLI tool,Image downloader,Markdown translator,AI translation,Markdown automation,Remote image handling,Markdown utilities,AI-powered Markdown,Markdown enhancement,Markdown file management">
+    <link rel="stylesheet" type="text/css" href="css/main.css?v=1.34.1">
+    <link rel="stylesheet" type="text/css" href="css/tocbot.css?v=1.34.1">
+    <link rel="stylesheet" type="text/css" href="css/media.css?v=1.34.1">
+    <link rel="stylesheet" type="text/css" href="css/sidebar.css?v=1.34.1">
+    <link rel="stylesheet" type="text/css" href="css/copy.css?v=1.34.1">
+    <link rel="stylesheet" type="text/css" href="css/demo-preview.css?v=1.34.1">
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+    <script src="js/copy.js?v=1.34.1"></script>
+    <script src="js/dark-mode.js?v=1.34.1"></script>
+    <script src="js/markdown-style.js?v=1.34.1"></script>
+  </head>
+  <body id="idoctotop"><a href="#idoctotop" class="gototop">top</a>
+    <header class="header">
+      <article class="inner warpper" style="max-width:720px;"><a class="logo" href="index.html"><img alt="mdctl logo" src="assets/icon.png">
+<span class="title">mdctl</span></a>
+        <div class="content">
+          <ul class="menu">
+            <li><a href="index.html" target="" class="">Home</a></li>
+            <li><a href="https://github.com/samzong" target="__blank" class="">About</a></li>
+          </ul><a href="https://github.com/samzong/mdctl" target="_blank" rel="noopener noreferrer" title="Github" name="Github" class="github"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+            </svg></a>
+          <dark-mode permanent=""></dark-mode>
+        </div>
+      </article>
+    </header>
+    <div style="max-width:720px;" class="warpper-content warpper notocs">
+      <markdown-style theme-auto-switch-disabled="">
+        <h1 id="export-功能设计文档"><a aria-hidden="true" tabindex="-1" href="#export-功能设计文档" class="anchor"><span class="icon icon-link"></span></a>Export 功能设计文档</h1>
+        <h2 id="功能概述"><a aria-hidden="true" tabindex="-1" href="#功能概述" class="anchor"><span class="icon icon-link"></span></a>功能概述</h2>
+        <p>为 mdctl 工具增加 <code>export</code> 子命令，用于将 Markdown 文件导出为其他格式。第一版将优先支持导出为 Word 文档格式（docx），后续可扩展支持更多格式（如 PDF、EPUB 等）。</p>
+        <p>该功能将利用 Pandoc 作为底层导出工具，支持 Pandoc 的模板系统，允许用户配置自定义的导出模板。</p>
+        <h2 id="用户需求"><a aria-hidden="true" tabindex="-1" href="#用户需求" class="anchor"><span class="icon icon-link"></span></a>用户需求</h2>
+        <ol>
+          <li>支持将单个 Markdown 文件导出为 Word 格式</li>
+          <li>支持将多个 Markdown 文件合并后导出为单个 Word 文档</li>
+          <li>支持按照文件夹中的文件名顺序合并文件</li>
+          <li>支持多种文档系统（MkDocs 第一期、Hugo、Docusaurus coming soon）的文件读取方式</li>
+          <li>在合并过程中智能调整标题层级，保持文档结构的清晰性</li>
+          <li>支持自定义 Word 模板，使最终文档具有一致的样式</li>
+        </ol>
+        <h2 id="命令设计"><a aria-hidden="true" tabindex="-1" href="#命令设计" class="anchor"><span class="icon icon-link"></span></a>命令设计</h2>
+        <pre><code class="code-highlight"><span class="code-line line-number" line="1">mdctl export [flags]
+</span></code><input type="hidden" value="mdctl export [flags]
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <h3 id="参数设计"><a aria-hidden="true" tabindex="-1" href="#参数设计" class="anchor"><span class="icon icon-link"></span></a>参数设计</h3>
+        <ul>
+          <li><code>-f, --file</code>: 指定单个 Markdown 文件进行导出</li>
+          <li><code>-d, --dir</code>: 指定包含多个 Markdown 文件的目录</li>
+          <li><code>-s, --site-type</code>: 指定文档站点类型，可选值：mkdocs, hugo, docusaurus（默认：mkdocs）</li>
+          <li><code>-o, --output</code>: 指定输出文件路径</li>
+          <li><code>-t, --template</code>: 指定 Word 模板文件路径</li>
+          <li><code>-F, --format</code>: 指定输出格式，可选值：docx, pdf, epub（默认：docx）</li>
+          <li><code>--toc</code>: 是否生成目录（默认：false）</li>
+          <li><code>--shift-heading-level-by</code>: 标题层级偏移量（默认：0）</li>
+          <li><code>--file-as-title</code>: 是否使用文件名作为章节标题（默认：false）</li>
+        </ul>
+        <h3 id="使用示例"><a aria-hidden="true" tabindex="-1" href="#使用示例" class="anchor"><span class="icon icon-link"></span></a>使用示例</h3>
+        <pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line line-number" line="1"><span class="token comment"># 导出单个文件</span>
+</span><span class="code-line line-number" line="2">mdctl <span class="token builtin class-name">export</span> <span class="token parameter variable">-f</span> README.md <span class="token parameter variable">-o</span> output.docx
+</span><span class="code-line line-number" line="3">
+</span><span class="code-line line-number" line="4"><span class="token comment"># 导出整个目录</span>
+</span><span class="code-line line-number" line="5">mdctl <span class="token builtin class-name">export</span> <span class="token parameter variable">-d</span> docs/ <span class="token parameter variable">-o</span> documentation.docx
+</span><span class="code-line line-number" line="6">
+</span><span class="code-line line-number" line="7"><span class="token comment"># 导出 MkDocs 站点</span>
+</span><span class="code-line line-number" line="8">mdctl <span class="token builtin class-name">export</span> <span class="token parameter variable">-d</span> docs/ <span class="token parameter variable">-s</span> mkdocs <span class="token parameter variable">-o</span> site_docs.docx
+</span><span class="code-line line-number" line="9">
+</span><span class="code-line line-number" line="10"><span class="token comment"># 导出 Hugo 站点</span>
+</span><span class="code-line line-number" line="11">mdctl <span class="token builtin class-name">export</span> <span class="token parameter variable">-d</span> content/ <span class="token parameter variable">-s</span> hugo <span class="token parameter variable">-o</span> hugo_docs.docx
+</span><span class="code-line line-number" line="12">
+</span><span class="code-line line-number" line="13"><span class="token comment"># 使用自定义模板</span>
+</span><span class="code-line line-number" line="14">mdctl <span class="token builtin class-name">export</span> <span class="token parameter variable">-d</span> docs/ <span class="token parameter variable">-o</span> report.docx <span class="token parameter variable">-t</span> templates/corporate.docx
+</span><span class="code-line line-number" line="15">
+</span><span class="code-line line-number" line="16"><span class="token comment"># 指定标题层级偏移量</span>
+</span><span class="code-line line-number" line="17">mdctl <span class="token builtin class-name">export</span> <span class="token parameter variable">-d</span> docs/ <span class="token parameter variable">-o</span> documentation.docx --shift-heading-level-by <span class="token number">2</span>
+</span><span class="code-line line-number" line="18">
+</span><span class="code-line line-number" line="19"><span class="token comment"># 导出为 PDF 格式</span>
+</span><span class="code-line line-number" line="20">mdctl <span class="token builtin class-name">export</span> <span class="token parameter variable">-d</span> docs/ <span class="token parameter variable">-o</span> documentation.pdf <span class="token parameter variable">-F</span> pdf
+</span></code><input type="hidden" value="# 导出单个文件
+mdctl export -f README.md -o output.docx
+
+# 导出整个目录
+mdctl export -d docs/ -o documentation.docx
+
+# 导出 MkDocs 站点
+mdctl export -d docs/ -s mkdocs -o site_docs.docx
+
+# 导出 Hugo 站点
+mdctl export -d content/ -s hugo -o hugo_docs.docx
+
+# 使用自定义模板
+mdctl export -d docs/ -o report.docx -t templates/corporate.docx
+
+# 指定标题层级偏移量
+mdctl export -d docs/ -o documentation.docx --shift-heading-level-by 2
+
+# 导出为 PDF 格式
+mdctl export -d docs/ -o documentation.pdf -F pdf
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <h2 id="实现设计"><a aria-hidden="true" tabindex="-1" href="#实现设计" class="anchor"><span class="icon icon-link"></span></a>实现设计</h2>
+        <h3 id="整体架构"><a aria-hidden="true" tabindex="-1" href="#整体架构" class="anchor"><span class="icon icon-link"></span></a>整体架构</h3>
+        <p>按照项目的现有结构，我们将在 <code>cmd/</code> 目录下创建 <code>export.go</code> 文件定义命令接口，在 <code>internal/</code> 目录下创建 <code>exporter/</code> 模块实现具体功能。</p>
+        <pre><code class="code-highlight"><span class="code-line line-number" line="1">mdctl/
+</span><span class="code-line line-number" line="2">├── cmd/
+</span><span class="code-line line-number" line="3">│   └── export.go        # 新增：export 命令定义
+</span><span class="code-line line-number" line="4">├── internal/
+</span><span class="code-line line-number" line="5">│   └── exporter/        # 新增：导出功能实现
+</span><span class="code-line line-number" line="6">│       ├── exporter.go  # 导出器接口定义
+</span><span class="code-line line-number" line="7">│       ├── pandoc.go    # Pandoc 导出实现
+</span><span class="code-line line-number" line="8">│       ├── merger.go    # Markdown 合并实现
+</span><span class="code-line line-number" line="9">│       ├── sitereader/  # 新增：不同文档系统的站点结构读取
+</span><span class="code-line line-number" line="10">│       │   ├── reader.go    # 站点读取器接口
+</span><span class="code-line line-number" line="11">│       │   ├── mkdocs.go    # MkDocs 站点读取
+</span><span class="code-line line-number" line="12">│       │   ├── hugo.go      # Hugo 站点读取
+</span><span class="code-line line-number" line="13">│       │   └── docusaurus.go # Docusaurus 站点读取
+</span><span class="code-line line-number" line="14">│       └── heading.go   # 标题处理实现
+</span></code><input type="hidden" value="mdctl/
+├── cmd/
+│   └── export.go        # 新增：export 命令定义
+├── internal/
+│   └── exporter/        # 新增：导出功能实现
+│       ├── exporter.go  # 导出器接口定义
+│       ├── pandoc.go    # Pandoc 导出实现
+│       ├── merger.go    # Markdown 合并实现
+│       ├── sitereader/  # 新增：不同文档系统的站点结构读取
+│       │   ├── reader.go    # 站点读取器接口
+│       │   ├── mkdocs.go    # MkDocs 站点读取
+│       │   ├── hugo.go      # Hugo 站点读取
+│       │   └── docusaurus.go # Docusaurus 站点读取
+│       └── heading.go   # 标题处理实现
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <h3 id="核心组件"><a aria-hidden="true" tabindex="-1" href="#核心组件" class="anchor"><span class="icon icon-link"></span></a>核心组件</h3>
+        <h4 id="1-命令处理器-cmdexportgo"><a aria-hidden="true" tabindex="-1" href="#1-命令处理器-cmdexportgo" class="anchor"><span class="icon icon-link"></span></a>1. 命令处理器 (cmd/export.go)</h4>
+        <p>负责解析命令行参数并调用导出功能。</p>
+        <pre class="language-go"><code class="language-go code-highlight"><span class="code-line line-number" line="1"><span class="token keyword">var</span> <span class="token punctuation">(</span>
+</span><span class="code-line line-number" line="2">    exportFile         <span class="token builtin">string</span>
+</span><span class="code-line line-number" line="3">    exportDir          <span class="token builtin">string</span>
+</span><span class="code-line line-number" line="4">    siteType           <span class="token builtin">string</span>
+</span><span class="code-line line-number" line="5">    configFile         <span class="token builtin">string</span>
+</span><span class="code-line line-number" line="6">    exportOutput       <span class="token builtin">string</span>
+</span><span class="code-line line-number" line="7">    exportTemplate     <span class="token builtin">string</span>
+</span><span class="code-line line-number" line="8">    exportFormat       <span class="token builtin">string</span>
+</span><span class="code-line line-number" line="9">    pandocPath         <span class="token builtin">string</span>
+</span><span class="code-line line-number" line="10">    generateToc        <span class="token builtin">bool</span>
+</span><span class="code-line line-number" line="11">    shiftHeadingLevelBy <span class="token builtin">int</span>
+</span><span class="code-line line-number" line="12">    fileAsTitle        <span class="token builtin">bool</span>
+</span><span class="code-line line-number" line="13">
+</span><span class="code-line line-number" line="14">    exportCmd <span class="token operator">=</span> <span class="token operator">&#x26;</span>cobra<span class="token punctuation">.</span>Command<span class="token punctuation">{</span>
+</span><span class="code-line line-number" line="15">        Use<span class="token punctuation">:</span>   <span class="token string">"export"</span><span class="token punctuation">,</span>
+</span><span class="code-line line-number" line="16">        Short<span class="token punctuation">:</span> <span class="token string">"Export markdown files to other formats"</span><span class="token punctuation">,</span>
+</span><span class="code-line line-number" line="17">        Long<span class="token punctuation">:</span>  <span class="token string">`...`</span><span class="token punctuation">,</span>
+</span><span class="code-line line-number" line="18">        RunE<span class="token punctuation">:</span> <span class="token keyword">func</span><span class="token punctuation">(</span>cmd <span class="token operator">*</span>cobra<span class="token punctuation">.</span>Command<span class="token punctuation">,</span> args <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">{</span>
+</span><span class="code-line line-number" line="19">            <span class="token comment">// 参数验证和处理逻辑</span>
+</span><span class="code-line line-number" line="20">            <span class="token comment">// 调用 internal/exporter 的功能</span>
+</span><span class="code-line line-number" line="21">        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+</span><span class="code-line line-number" line="22">    <span class="token punctuation">}</span>
+</span><span class="code-line line-number" line="23"><span class="token punctuation">)</span>
+</span></code><input type="hidden" value="var (
+    exportFile         string
+    exportDir          string
+    siteType           string
+    configFile         string
+    exportOutput       string
+    exportTemplate     string
+    exportFormat       string
+    pandocPath         string
+    generateToc        bool
+    shiftHeadingLevelBy int
+    fileAsTitle        bool
+
+    exportCmd = &#x26;cobra.Command{
+        Use:   &#x22;export&#x22;,
+        Short: &#x22;Export markdown files to other formats&#x22;,
+        Long:  &#x60;...&#x60;,
+        RunE: func(cmd *cobra.Command, args []string) error {
+            // 参数验证和处理逻辑
+            // 调用 internal/exporter 的功能
+        },
+    }
+)
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <h4 id="2-导出器接口-internalexporterexportergo"><a aria-hidden="true" tabindex="-1" href="#2-导出器接口-internalexporterexportergo" class="anchor"><span class="icon icon-link"></span></a>2. 导出器接口 (internal/exporter/exporter.go)</h4>
+        <p>定义导出功能的通用接口，支持扩展其他格式。</p>
+        <pre class="language-go"><code class="language-go code-highlight"><span class="code-line line-number" line="1"><span class="token keyword">type</span> Exporter <span class="token keyword">interface</span> <span class="token punctuation">{</span>
+</span><span class="code-line line-number" line="2">    <span class="token function">Export</span><span class="token punctuation">(</span>input <span class="token builtin">string</span><span class="token punctuation">,</span> output <span class="token builtin">string</span><span class="token punctuation">,</span> options ExportOptions<span class="token punctuation">)</span> <span class="token builtin">error</span>
+</span><span class="code-line line-number" line="3"><span class="token punctuation">}</span>
+</span><span class="code-line line-number" line="4">
+</span><span class="code-line line-number" line="5"><span class="token keyword">type</span> ExportOptions <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+</span><span class="code-line line-number" line="6">    Template            <span class="token builtin">string</span>
+</span><span class="code-line line-number" line="7">    GenerateToc         <span class="token builtin">bool</span>
+</span><span class="code-line line-number" line="8">    ShiftHeadingLevelBy <span class="token builtin">int</span>
+</span><span class="code-line line-number" line="9">    FileAsTitle         <span class="token builtin">bool</span>
+</span><span class="code-line line-number" line="10">    Format              <span class="token builtin">string</span>
+</span><span class="code-line line-number" line="11">    <span class="token comment">// 其他选项</span>
+</span><span class="code-line line-number" line="12"><span class="token punctuation">}</span>
+</span></code><input type="hidden" value="type Exporter interface {
+    Export(input string, output string, options ExportOptions) error
+}
+
+type ExportOptions struct {
+    Template            string
+    GenerateToc         bool
+    ShiftHeadingLevelBy int
+    FileAsTitle         bool
+    Format              string
+    // 其他选项
+}
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <h4 id="3-pandoc-导出实现-internalexporterpandocgo"><a aria-hidden="true" tabindex="-1" href="#3-pandoc-导出实现-internalexporterpandocgo" class="anchor"><span class="icon icon-link"></span></a>3. Pandoc 导出实现 (internal/exporter/pandoc.go)</h4>
+        <p>使用 Pandoc 工具实现导出功能。</p>
+        <pre class="language-go"><code class="language-go code-highlight"><span class="code-line line-number" line="1"><span class="token keyword">type</span> PandocExporter <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+</span><span class="code-line line-number" line="2">    PandocPath <span class="token builtin">string</span>
+</span><span class="code-line line-number" line="3"><span class="token punctuation">}</span>
+</span><span class="code-line line-number" line="4">
+</span><span class="code-line line-number" line="5"><span class="token keyword">func</span> <span class="token punctuation">(</span>e <span class="token operator">*</span>PandocExporter<span class="token punctuation">)</span> <span class="token function">Export</span><span class="token punctuation">(</span>input<span class="token punctuation">,</span> output <span class="token builtin">string</span><span class="token punctuation">,</span> options ExportOptions<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">{</span>
+</span><span class="code-line line-number" line="6">    <span class="token comment">// 构建并执行 Pandoc 命令</span>
+</span><span class="code-line line-number" line="7">    <span class="token comment">// 如果 pandoc 不可用，返回明确的错误提示</span>
+</span><span class="code-line line-number" line="8"><span class="token punctuation">}</span>
+</span></code><input type="hidden" value="type PandocExporter struct {
+    PandocPath string
+}
+
+func (e *PandocExporter) Export(input, output string, options ExportOptions) error {
+    // 构建并执行 Pandoc 命令
+    // 如果 pandoc 不可用，返回明确的错误提示
+}
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <h4 id="4-站点结构读取器-internalexportersitereader"><a aria-hidden="true" tabindex="-1" href="#4-站点结构读取器-internalexportersitereader" class="anchor"><span class="icon icon-link"></span></a>4. 站点结构读取器 (internal/exporter/sitereader/)</h4>
+        <p>负责识别和解析不同文档系统的站点结构。</p>
+        <pre class="language-go"><code class="language-go code-highlight"><span class="code-line line-number" line="1"><span class="token comment">// 站点读取器接口</span>
+</span><span class="code-line line-number" line="2"><span class="token keyword">type</span> SiteReader <span class="token keyword">interface</span> <span class="token punctuation">{</span>
+</span><span class="code-line line-number" line="3">    <span class="token comment">// 检测给定目录是否为此类型的站点</span>
+</span><span class="code-line line-number" line="4">    <span class="token function">Detect</span><span class="token punctuation">(</span>dir <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">bool</span>
+</span><span class="code-line line-number" line="5">    
+</span><span class="code-line line-number" line="6">    <span class="token comment">// 读取站点结构，返回按顺序排列的文件列表</span>
+</span><span class="code-line line-number" line="7">    <span class="token function">ReadStructure</span><span class="token punctuation">(</span>dir <span class="token builtin">string</span><span class="token punctuation">,</span> configPath <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span>
+</span><span class="code-line line-number" line="8"><span class="token punctuation">}</span>
+</span><span class="code-line line-number" line="9">
+</span><span class="code-line line-number" line="10"><span class="token comment">// 工厂函数，根据站点类型返回相应的读取器</span>
+</span><span class="code-line line-number" line="11"><span class="token keyword">func</span> <span class="token function">GetSiteReader</span><span class="token punctuation">(</span>siteType <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>SiteReader<span class="token punctuation">,</span> <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+</span><span class="code-line line-number" line="12">    <span class="token comment">// 返回对应类型的读取器实现</span>
+</span><span class="code-line line-number" line="13"><span class="token punctuation">}</span>
+</span></code><input type="hidden" value="// 站点读取器接口
+type SiteReader interface {
+    // 检测给定目录是否为此类型的站点
+    Detect(dir string) bool
+    
+    // 读取站点结构，返回按顺序排列的文件列表
+    ReadStructure(dir string, configPath string) ([]string, error)
+}
+
+// 工厂函数，根据站点类型返回相应的读取器
+func GetSiteReader(siteType string) (SiteReader, error) {
+    // 返回对应类型的读取器实现
+}
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <h4 id="5-markdown-合并器-internalexportermergergo"><a aria-hidden="true" tabindex="-1" href="#5-markdown-合并器-internalexportermergergo" class="anchor"><span class="icon icon-link"></span></a>5. Markdown 合并器 (internal/exporter/merger.go)</h4>
+        <p>负责合并多个 Markdown 文件。</p>
+        <pre class="language-go"><code class="language-go code-highlight"><span class="code-line line-number" line="1"><span class="token keyword">type</span> Merger <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+</span><span class="code-line line-number" line="2">    ShiftHeadingLevelBy <span class="token builtin">int</span>
+</span><span class="code-line line-number" line="3">    FileAsTitle         <span class="token builtin">bool</span>
+</span><span class="code-line line-number" line="4"><span class="token punctuation">}</span>
+</span><span class="code-line line-number" line="5">
+</span><span class="code-line line-number" line="6"><span class="token keyword">func</span> <span class="token punctuation">(</span>m <span class="token operator">*</span>Merger<span class="token punctuation">)</span> <span class="token function">Merge</span><span class="token punctuation">(</span>sources <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">,</span> target <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">{</span>
+</span><span class="code-line line-number" line="7">    <span class="token comment">// 合并多个 Markdown 文件的逻辑</span>
+</span><span class="code-line line-number" line="8">    <span class="token comment">// 自动处理标题层级</span>
+</span><span class="code-line line-number" line="9"><span class="token punctuation">}</span>
+</span></code><input type="hidden" value="type Merger struct {
+    ShiftHeadingLevelBy int
+    FileAsTitle         bool
+}
+
+func (m *Merger) Merge(sources []string, target string) error {
+    // 合并多个 Markdown 文件的逻辑
+    // 自动处理标题层级
+}
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <h4 id="6-标题处理器-internalexporterheadinggo"><a aria-hidden="true" tabindex="-1" href="#6-标题处理器-internalexporterheadinggo" class="anchor"><span class="icon icon-link"></span></a>6. 标题处理器 (internal/exporter/heading.go)</h4>
+        <p>处理 Markdown 文件中的标题层级。</p>
+        <pre class="language-go"><code class="language-go code-highlight"><span class="code-line line-number" line="1"><span class="token keyword">func</span> <span class="token function">ShiftHeadings</span><span class="token punctuation">(</span>content <span class="token builtin">string</span><span class="token punctuation">,</span> levels <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token builtin">string</span> <span class="token punctuation">{</span>
+</span><span class="code-line line-number" line="2">    <span class="token comment">// 调整标题层级的逻辑</span>
+</span><span class="code-line line-number" line="3"><span class="token punctuation">}</span>
+</span></code><input type="hidden" value="func ShiftHeadings(content string, levels int) string {
+    // 调整标题层级的逻辑
+}
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <h3 id="工作流程"><a aria-hidden="true" tabindex="-1" href="#工作流程" class="anchor"><span class="icon icon-link"></span></a>工作流程</h3>
+        <ol>
+          <li><strong>命令解析</strong>：解析用户提供的命令行参数</li>
+          <li><strong>文件收集</strong>：根据参数收集需要处理的 Markdown 文件
+            <ul>
+              <li>单文件模式：直接使用指定文件</li>
+              <li>目录模式：收集目录中的所有 Markdown 文件并按文件名排序</li>
+              <li>站点模式：使用相应的站点读取器解析站点结构</li>
+            </ul>
+          </li>
+          <li><strong>文件合并</strong>：如果有多个文件，将它们合并为一个临时 Markdown 文件
+            <ul>
+              <li>自动调整每个文件的标题层级</li>
+              <li>可选添加文件名作为章节标题</li>
+            </ul>
+          </li>
+          <li><strong>格式转换</strong>：使用 Pandoc 将 Markdown 转换为目标格式
+            <ul>
+              <li>应用用户指定的模板（如果有）</li>
+              <li>生成目录（如果启用）</li>
+            </ul>
+          </li>
+          <li><strong>输出处理</strong>：将最终结果输出到用户指定的路径</li>
+        </ol>
+        <h2 id="标题层级处理策略"><a aria-hidden="true" tabindex="-1" href="#标题层级处理策略" class="anchor"><span class="icon icon-link"></span></a>标题层级处理策略</h2>
+        <p>为了解决多文件合并时标题层级的问题，系统将自动处理标题层级：</p>
+        <ol>
+          <li>
+            <p>每个文件的标题层级将按照指定的偏移量调整：</p>
+            <ul>
+              <li>H1 -> H(1+偏移量)</li>
+              <li>H2 -> H(2+偏移量)</li>
+              <li>...</li>
+              <li>如果调整后超过 H6，将转换为加粗文本 (<strong>文本</strong>)</li>
+            </ul>
+          </li>
+          <li>
+            <p>如果启用了文件名作为标题功能，会自动在每个文件内容前添加对应层级的标题</p>
+          </li>
+          <li>
+            <p>系统会自动处理标题的相对层级关系，确保文档结构的逻辑性</p>
+          </li>
+        </ol>
+        <h2 id="依赖条件"><a aria-hidden="true" tabindex="-1" href="#依赖条件" class="anchor"><span class="icon icon-link"></span></a>依赖条件</h2>
+        <p><strong>Pandoc</strong>：需要系统中安装 Pandoc 工具</p>
+        <ul>
+          <li>在执行导出命令时检查 Pandoc 是否可用</li>
+          <li>如果找不到 Pandoc，提供明确的错误信息和安装指导</li>
+        </ul>
+        <h2 id="错误处理"><a aria-hidden="true" tabindex="-1" href="#错误处理" class="anchor"><span class="icon icon-link"></span></a>错误处理</h2>
+        <ol>
+          <li>Pandoc 不可用时提供明确的错误信息和安装指导</li>
+          <li>文件不存在或无法访问时的错误处理</li>
+          <li>合并过程中可能出现的格式问题处理</li>
+          <li>模板文件异常的处理</li>
+          <li>不支持的站点类型或配置文件处理</li>
+        </ol>
+        <h2 id="未来扩展"><a aria-hidden="true" tabindex="-1" href="#未来扩展" class="anchor"><span class="icon icon-link"></span></a>未来扩展</h2>
+        <ol>
+          <li>增强模板管理功能，支持模板下载和更新</li>
+          <li>支持更多的文档站点系统</li>
+          <li>支持更复杂的文档结构处理，如自动生成封面、页眉页脚</li>
+          <li>集成图表和公式渲染功能</li>
+        </ol>
+      </markdown-style>
+    </div>
+    <script src="js/demo-preview.js?v=1.34.1"></script>
+    <div class="footer warpper" style="max-width:720px;">Copyright © 2025 <a href="https://github.com/samzong" target="_blank">samzong</a><br></div>
+    <script src="js/tocbot.js?v=1.34.1"></script>
+  </body>
+</html>
