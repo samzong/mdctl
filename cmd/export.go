@@ -40,7 +40,7 @@ Examples:
   mdctl export -d docs/ -o documentation.docx --toc --toc-depth 4
   mdctl export -d docs/ -o documentation.pdf -F pdf`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// 初始化日志
+			// Initialize logger
 			if verbose {
 				logger = log.New(os.Stdout, "[EXPORT] ", log.LstdFlags)
 			} else {
@@ -49,7 +49,7 @@ Examples:
 
 			logger.Println("Starting export process...")
 
-			// 参数验证
+			// Parameter validation
 			if exportFile == "" && exportDir == "" {
 				return fmt.Errorf("either source file (-f) or source directory (-d) must be specified")
 			}
@@ -63,14 +63,14 @@ Examples:
 			logger.Printf("Validating parameters: file=%s, dir=%s, output=%s, format=%s, site-type=%s",
 				exportFile, exportDir, exportOutput, exportFormat, siteType)
 
-			// 检查 Pandoc 是否可用
+			// Check if Pandoc is available
 			logger.Println("Checking Pandoc availability...")
 			if err := exporter.CheckPandocAvailability(); err != nil {
 				return err
 			}
 			logger.Println("Pandoc is available.")
 
-			// 创建导出选项
+			// Create export options
 			options := exporter.ExportOptions{
 				Template:            exportTemplate,
 				GenerateToc:         generateToc,
@@ -87,7 +87,7 @@ Examples:
 			logger.Printf("Export options: template=%s, toc=%v, toc-depth=%d, shift-heading=%d, file-as-title=%v",
 				exportTemplate, generateToc, tocDepth, shiftHeadingLevelBy, fileAsTitle)
 
-			// 执行导出
+			// Execute export
 			exp := exporter.NewExporter()
 			var err error
 

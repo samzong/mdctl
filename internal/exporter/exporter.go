@@ -12,43 +12,43 @@ import (
 	"github.com/samzong/mdctl/internal/exporter/sitereader"
 )
 
-// ExportOptions 定义导出选项
+// ExportOptions defines export options
 type ExportOptions struct {
-	Template            string      // Word 模板文件路径
-	GenerateToc         bool        // 是否生成目录
-	ShiftHeadingLevelBy int         // 标题层级偏移量
-	FileAsTitle         bool        // 是否使用文件名作为章节标题
-	Format              string      // 输出格式 (docx, pdf, epub)
-	SiteType            string      // 站点类型 (mkdocs, hugo, docusaurus)
-	Verbose             bool        // 是否启用详细日志
-	Logger              *log.Logger // 日志记录器
-	SourceDirs          []string    // 源文件所在的目录列表，用于处理图片路径
-	TocDepth            int         // 目录深度，默认为 3
-	NavPath             string      // 指定要导出的导航路径
+	Template            string      // Word template file path
+	GenerateToc         bool        // Whether to generate table of contents
+	ShiftHeadingLevelBy int         // Heading level offset
+	FileAsTitle         bool        // Whether to use filename as section title
+	Format              string      // Output format (docx, pdf, epub)
+	SiteType            string      // Site type (mkdocs, hugo, docusaurus)
+	Verbose             bool        // Whether to enable verbose logging
+	Logger              *log.Logger // Logger
+	SourceDirs          []string    // List of source directories for processing image paths
+	TocDepth            int         // Table of contents depth, default is 3
+	NavPath             string      // Specified navigation path to export
 }
 
-// Exporter 定义导出器接口
+// Exporter defines exporter interface
 type Exporter interface {
 	Export(input string, output string, options ExportOptions) error
 }
 
-// DefaultExporter 是默认的导出器实现
+// DefaultExporter is the default exporter implementation
 type DefaultExporter struct {
 	pandocPath string
 	logger     *log.Logger
 }
 
-// NewExporter 创建一个新的导出器
+// NewExporter creates a new exporter
 func NewExporter() *DefaultExporter {
 	return &DefaultExporter{
-		pandocPath: "pandoc", // 默认使用系统 PATH 中的 pandoc
+		pandocPath: "pandoc", // Default to pandoc in system PATH
 		logger:     log.New(os.Stdout, "[EXPORTER] ", log.LstdFlags),
 	}
 }
 
-// ExportFile 导出单个 Markdown 文件
+// ExportFile exports a single Markdown file
 func (e *DefaultExporter) ExportFile(input, output string, options ExportOptions) error {
-	// 设置日志记录器
+	// Set logger
 	if options.Logger != nil {
 		e.logger = options.Logger
 	} else if !options.Verbose {
@@ -57,14 +57,14 @@ func (e *DefaultExporter) ExportFile(input, output string, options ExportOptions
 
 	e.logger.Printf("Exporting file: %s -> %s", input, output)
 
-	// 检查文件是否存在
+	// Check if file exists
 	if _, err := os.Stat(input); os.IsNotExist(err) {
 		e.logger.Printf("Error: input file does not exist: %s", input)
 		return fmt.Errorf("input file does not exist: %s", input)
 	}
 	e.logger.Printf("Input file exists: %s", input)
 
-	// 创建输出目录（如果不存在）
+	// Create output directory (if it doesn't exist)
 	outputDir := filepath.Dir(output)
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		e.logger.Printf("Error: failed to create output directory: %s", err)
@@ -72,12 +72,12 @@ func (e *DefaultExporter) ExportFile(input, output string, options ExportOptions
 	}
 	e.logger.Printf("Output directory created/verified: %s", outputDir)
 
-	// 添加源文件目录到 SourceDirs
+	// Add source directory to SourceDirs
 	sourceDir := filepath.Dir(input)
 	if options.SourceDirs == nil {
 		options.SourceDirs = []string{sourceDir}
 	} else {
-		// 检查是否已经存在
+		// Check if already exists
 		found := false
 		for _, dir := range options.SourceDirs {
 			if dir == sourceDir {
@@ -91,7 +91,7 @@ func (e *DefaultExporter) ExportFile(input, output string, options ExportOptions
 	}
 	e.logger.Printf("Added source directory to resource paths: %s", sourceDir)
 
-	// 使用 Pandoc 导出
+	// Use Pandoc to export
 	e.logger.Println("Starting Pandoc export process...")
 	pandocExporter := &PandocExporter{
 		PandocPath: e.pandocPath,
@@ -107,9 +107,9 @@ func (e *DefaultExporter) ExportFile(input, output string, options ExportOptions
 	return nil
 }
 
-// ExportDirectory 导出目录中的 Markdown 文件
+// ExportDirectory exports Markdown files in a directory
 func (e *DefaultExporter) ExportDirectory(inputDir, output string, options ExportOptions) error {
-	// 设置日志记录器
+	// Set logger
 	if options.Logger != nil {
 		e.logger = options.Logger
 	} else if !options.Verbose {
@@ -118,14 +118,14 @@ func (e *DefaultExporter) ExportDirectory(inputDir, output string, options Expor
 
 	e.logger.Printf("Exporting directory: %s -> %s", inputDir, output)
 
-	// 检查目录是否存在
+	// Check if directory exists
 	if _, err := os.Stat(inputDir); os.IsNotExist(err) {
 		e.logger.Printf("Error: input directory does not exist: %s", inputDir)
 		return fmt.Errorf("input directory does not exist: %s", inputDir)
 	}
 	e.logger.Printf("Input directory exists: %s", inputDir)
 
-	// 创建输出目录（如果不存在）
+	// Create output directory (if it doesn't exist)
 	outputDir := filepath.Dir(output)
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		e.logger.Printf("Error: failed to create output directory: %s", err)
@@ -133,11 +133,11 @@ func (e *DefaultExporter) ExportDirectory(inputDir, output string, options Expor
 	}
 	e.logger.Printf("Output directory created/verified: %s", outputDir)
 
-	// 初始化 SourceDirs（如果为 nil）
+	// Initialize SourceDirs (if nil)
 	if options.SourceDirs == nil {
 		options.SourceDirs = []string{inputDir}
 	} else {
-		// 检查是否已经存在
+		// Check if already exists
 		found := false
 		for _, dir := range options.SourceDirs {
 			if dir == inputDir {
@@ -151,12 +151,12 @@ func (e *DefaultExporter) ExportDirectory(inputDir, output string, options Expor
 	}
 	e.logger.Printf("Added input directory to resource paths: %s", inputDir)
 
-	// 根据站点类型选择不同的处理方式
+	// Depending on site type, choose different processing
 	var files []string
 	var err error
 
 	if options.SiteType != "" && options.SiteType != "basic" {
-		// 使用站点读取器获取文件列表
+		// Use site reader to get file list
 		e.logger.Printf("Using site reader for site type: %s", options.SiteType)
 		reader, err := sitereader.GetSiteReader(options.SiteType, options.Verbose, e.logger)
 		if err != nil {
@@ -164,7 +164,7 @@ func (e *DefaultExporter) ExportDirectory(inputDir, output string, options Expor
 			return err
 		}
 
-		// 检测是否为指定类型的站点
+		// Detect if it's the specified type of site
 		e.logger.Printf("Detecting if directory is a %s site...", options.SiteType)
 		if !reader.Detect(inputDir) {
 			e.logger.Printf("Error: directory %s does not appear to be a %s site", inputDir, options.SiteType)
@@ -180,7 +180,7 @@ func (e *DefaultExporter) ExportDirectory(inputDir, output string, options Expor
 		}
 		e.logger.Printf("Found %d files in site structure", len(files))
 	} else {
-		// 基础目录模式：按文件名排序
+		// Basic directory mode: sort files by name
 		e.logger.Println("Using basic directory mode, sorting files by name")
 		files, err = GetMarkdownFilesInDir(inputDir)
 		if err != nil {
@@ -195,13 +195,13 @@ func (e *DefaultExporter) ExportDirectory(inputDir, output string, options Expor
 		return fmt.Errorf("no markdown files found in directory: %s", inputDir)
 	}
 
-	// 如果只有一个文件，直接导出
+	// If there's only one file, export directly
 	if len(files) == 1 {
 		e.logger.Printf("Only one file found, exporting directly: %s", files[0])
 		return e.ExportFile(files[0], output, options)
 	}
 
-	// 合并多个文件
+	// Merge multiple files
 	e.logger.Printf("Merging %d files...", len(files))
 	merger := &Merger{
 		ShiftHeadingLevelBy: options.ShiftHeadingLevelBy,
@@ -211,7 +211,7 @@ func (e *DefaultExporter) ExportDirectory(inputDir, output string, options Expor
 		Verbose:             options.Verbose,
 	}
 
-	// 创建临时文件
+	// Create temporary file
 	e.logger.Println("Creating temporary file for merged content...")
 	tempFile, err := os.CreateTemp("", "mdctl-merged-*.md")
 	if err != nil {
@@ -223,7 +223,7 @@ func (e *DefaultExporter) ExportDirectory(inputDir, output string, options Expor
 	defer os.Remove(tempFilePath)
 	e.logger.Printf("Temporary file created: %s", tempFilePath)
 
-	// 合并文件
+	// Merge files
 	e.logger.Println("Merging files...")
 	if err := merger.Merge(files, tempFilePath); err != nil {
 		e.logger.Printf("Error merging files: %s", err)
@@ -231,11 +231,11 @@ func (e *DefaultExporter) ExportDirectory(inputDir, output string, options Expor
 	}
 	e.logger.Println("Files merged successfully")
 
-	// 将合并器收集的源目录添加到选项中
+	// Add merger collected source directories to options
 	if merger.SourceDirs != nil && len(merger.SourceDirs) > 0 {
 		e.logger.Printf("Adding %d source directories from merger", len(merger.SourceDirs))
 		for _, dir := range merger.SourceDirs {
-			// 检查是否已经存在
+			// Check if already exists
 			found := false
 			for _, existingDir := range options.SourceDirs {
 				if existingDir == dir {
@@ -250,7 +250,7 @@ func (e *DefaultExporter) ExportDirectory(inputDir, output string, options Expor
 		}
 	}
 
-	// 导出合并后的文件
+	// Export merged file
 	e.logger.Println("Starting Pandoc export process...")
 	pandocExporter := &PandocExporter{
 		PandocPath: e.pandocPath,
@@ -266,17 +266,17 @@ func (e *DefaultExporter) ExportDirectory(inputDir, output string, options Expor
 	return nil
 }
 
-// SiteReader 定义站点读取器接口
+// SiteReader defines site reader interface
 type SiteReader interface {
-	// 检测给定目录是否为此类型的站点
+	// Detect if given directory is this type of site
 	Detect(dir string) bool
-	// 读取站点结构，返回按顺序排列的文件列表
+	// Read site structure, return sorted list of files
 	ReadStructure(dir string, configPath string) ([]string, error)
 }
 
-// GetMarkdownFilesInDir 获取目录中的所有 Markdown 文件并按文件名排序
+// GetMarkdownFilesInDir gets all Markdown files in a directory and sorts them by filename
 func GetMarkdownFilesInDir(dir string) ([]string, error) {
-	// 检查目录是否存在
+	// Check if directory exists
 	info, err := os.Stat(dir)
 	if err != nil {
 		return nil, err
@@ -285,7 +285,7 @@ func GetMarkdownFilesInDir(dir string) ([]string, error) {
 		return nil, fmt.Errorf("%s is not a directory", dir)
 	}
 
-	// 递归查找所有 Markdown 文件
+	// Recursively find all Markdown files
 	var files []string
 	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -304,7 +304,7 @@ func GetMarkdownFilesInDir(dir string) ([]string, error) {
 		return nil, fmt.Errorf("failed to walk directory %s: %s", dir, err)
 	}
 
-	// 按文件名排序
+	// Sort by filename
 	sort.Strings(files)
 
 	return files, nil

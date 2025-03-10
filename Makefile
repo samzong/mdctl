@@ -10,7 +10,7 @@ HOMEBREW_TAP_REPO=homebrew-tap
 FORMULA_FILE=Formula/mdctl.rb
 BRANCH_NAME=update-mdctl-$(CLEAN_VERSION)
 
-# 调整架构定义匹配goreleaser输出
+# Adjust architecture definitions to match goreleaser output
 SUPPORTED_ARCHS = Darwin_x86_64 Darwin_arm64 Linux_x86_64 Linux_arm64
 
 .PHONY: deps
