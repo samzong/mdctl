@@ -10,6 +10,7 @@ import (
 var (
 	Version   = "dev"
 	BuildTime = "unknown"
+	verbose   bool
 
 	rootCmd = &cobra.Command{
 		Use:   "mdctl",
@@ -34,6 +35,9 @@ func init() {
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(uploadCmd)
 	rootCmd.AddCommand(exportCmd)
+
+	// Add global flags
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
 
 	// Then add groups and set group IDs
 	rootCmd.AddGroup(&cobra.Group{

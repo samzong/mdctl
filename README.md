@@ -14,17 +14,20 @@ A command-line tool for processing Markdown files. Currently, it supports automa
 - Updates image references in Markdown files using relative paths.
 - Provides detailed processing logs.
 - Translates markdown files using AI models with support for multiple languages.
+- Generates llms.txt files from website sitemaps for training language models.
+- Exports markdown files to various document formats (DOCX, PDF, EPUB) with customization options.
+- Uploads local images in markdown files to cloud storage services and updates references.
 
 ## Installation
 
-use Homebrew to install mdctl. Follow the [Homebrew Installation Guide](https://brew.sh/) to install Homebrew.
+Use Homebrew to install mdctl. Follow the [Homebrew Installation Guide](https://brew.sh/) to install Homebrew.
 
 ```bash
 brew tap samzong/tap
 brew install samzong/tap/mdctl
 ```
 
-or use go to install mdctl.
+Or use go to install mdctl.
 
 ```bash
 go install github.com/samzong/mdctl@latest
@@ -32,21 +35,51 @@ go install github.com/samzong/mdctl@latest
 
 ## Usage
 
-### Downloading Remote Images
+Quick examples for common tasks:
 
-Processing a single file:
+### Downloading Images
 ```bash
+# Process a single file
 mdctl download -f path/to/your/file.md
-```
 
-Processing an entire directory:
-```bash
+# Process a directory
 mdctl download -d path/to/your/directory
 ```
 
-Specifying an output directory for images:
+### Exporting Documents
 ```bash
-mdctl download -f path/to/your/file.md -o path/to/images
+# Export to DOCX
+mdctl export -f README.md -o output.docx
+
+# Export to PDF with table of contents
+mdctl export -d docs/ -o documentation.pdf -F pdf --toc
+```
+
+### Uploading to Cloud Storage
+```bash
+# Upload images from a file
+mdctl upload -f post.md
+
+# Upload images from a directory
+mdctl upload -d docs/
+```
+
+### Translating Content
+```bash
+# Translate to Chinese
+mdctl translate -f README.md -l zh
+
+# Translate a directory to Japanese
+mdctl translate -d docs/ -l ja
+```
+
+### Generating LLMS.txt
+```bash
+# Standard mode (titles and descriptions)
+mdctl llmstxt https://example.com/sitemap.xml > llms.txt
+
+# Full-content mode
+mdctl llmstxt -f https://example.com/sitemap.xml > llms-full.txt
 ```
 
 ## Command Reference
@@ -62,18 +95,154 @@ Parameters:
   - Default: `images` subdirectory within the file's directory (file mode).
   - Default: `images` subdirectory within the specified directory (directory mode).
 
-## Translate Command
+### `export` Command
+
+The `export` command converts markdown files to various document formats like DOCX, PDF, and EPUB using Pandoc as the underlying conversion tool.
+
+Features:
+- Supports exporting single files or entire directories
+- Generates professional documents from markdown content
+- Supports various document formats (DOCX, PDF, EPUB)
+- Table of contents generation
+- Custom document templates
+- Heading level adjustment
+- Support for different site structures (basic, MkDocs, Hugo, Docusaurus)
+
+Usage:
+```bash
+# Export a single file to DOCX
+mdctl export -f README.md -o output.docx
+
+# Export a directory to PDF
+mdctl export -d docs/ -o documentation.pdf -F pdf
+
+# Use a template and generate table of contents
+mdctl export -d docs/ -o report.docx -t templates/corporate.docx --toc
+
+# Export with heading level adjustment
+mdctl export -d docs/ -o documentation.docx --shift-heading-level-by 2
+
+# Export from a specific site type (MkDocs, Hugo, etc.)
+mdctl export -d docs/ -s mkdocs -o site_docs.docx
+```
+
+Parameters:
+- `-f, --file`: Source markdown file to export
+- `-d, --dir`: Source directory containing markdown files to export
+- `-o, --output`: Output file path (required)
+- `-F, --format`: Output format (docx, pdf, epub) (default: docx)
+- `-t, --template`: Word template file path
+- `-s, --site-type`: Site type (basic, mkdocs, hugo, docusaurus) (default: basic)
+- `--toc`: Generate table of contents
+- `--toc-depth`: Depth of table of contents (default: 3)
+- `--shift-heading-level-by`: Shift heading level by N
+- `--file-as-title`: Use filename as section title
+- `-n, --nav-path`: Specify the navigation path to export
+- `-v, --verbose`: Enable verbose output
+
+### `upload` Command
+
+The `upload` command uploads local images in markdown files to cloud storage and rewrites URLs to reference the uploaded versions.
+
+Features:
+- Supports multiple cloud storage providers with S3-compatible APIs
+- Preserves relative link structure
+- Configurable upload path prefixes
+- Custom domain support for generated URLs
+- Conflict resolution policies
+- Concurrent uploads for better performance
+- Dry-run mode for previewing changes
+
+Usage:
+```bash
+# Upload images from a single file
+mdctl upload -f post.md
+
+# Upload images from a directory
+mdctl upload -d docs/
+
+# Upload with specific provider and bucket
+mdctl upload -f post.md -p s3 -b my-bucket
+
+# Use a custom domain for URLs
+mdctl upload -f post.md -c images.example.com
+
+# Preview changes without uploading
+mdctl upload -f post.md --dry-run
+
+# Force upload even if file exists
+mdctl upload -f post.md --force
+```
+
+Parameters:
+- `-f, --file`: Source markdown file to process
+- `-d, --dir`: Source directory containing markdown files to process
+- `-p, --provider`: Cloud storage provider (s3, r2, minio)
+- `-b, --bucket`: Cloud storage bucket name
+- `-c, --custom-domain`: Custom domain for generated URLs
+- `--prefix`: Path prefix for uploaded files
+- `--dry-run`: Preview changes without uploading
+- `--concurrency`: Number of concurrent uploads (default: 5)
+- `-F, --force`: Force upload even if file exists
+- `--skip-verify`: Skip SSL verification
+- `--ca-cert`: Path to CA certificate
+- `--conflict`: Conflict policy (rename, version, overwrite) (default: rename)
+- `--cache-dir`: Cache directory path
+- `--include`: Comma-separated list of file extensions to include
+- `--storage`: Storage name to use from configuration
+- `-v, --verbose`: Enable verbose output
+
+### `llmstxt` Command
+
+The `llmstxt` command generates a markdown-formatted text file from a website's sitemap.xml, which is ideal for training or fine-tuning language models.
+
+Features:
+- Extracts website content in a structured format
+- Supports standard mode (title and description only) and full-content mode
+- Allows filtering pages with include/exclude patterns
+- Configurable concurrency and timeout settings
+- Output to file or stdout
+
+Usage:
+```bash
+# Standard mode - extracts only titles and descriptions
+mdctl llmstxt https://example.com/sitemap.xml > llms.txt
+
+# Full-content mode - extracts complete page content
+mdctl llmstxt -f https://example.com/sitemap.xml > llms-full.txt
+
+# Specify output file
+mdctl llmstxt -o output.txt https://example.com/sitemap.xml
+
+# Include/exclude specific paths
+mdctl llmstxt -i "/blog/*" -e "/blog/draft/*" https://example.com/sitemap.xml
+
+# Configure concurrency and timeout
+mdctl llmstxt -c 10 --timeout 60 https://example.com/sitemap.xml
+```
+
+Parameters:
+- `[url]`: The URL to the sitemap.xml file (required)
+- `-o, --output`: Output file path (default: stdout)
+- `-i, --include-path`: Glob patterns for paths to include (can be specified multiple times)
+- `-e, --exclude-path`: Glob patterns for paths to exclude (can be specified multiple times)
+- `-f, --full`: Enable full-content mode (extract page content)
+- `-c, --concurrency`: Number of concurrent requests (default: 5)
+- `--timeout`: Request timeout in seconds (default: 30)
+- `-v, --verbose`: Enable verbose output
+
+### `translate` Command
 
 The `translate` command allows you to translate markdown files or directories to a specified language using AI models.
 
-### Supported AI Models
+#### Supported AI Models
 
 - OpenAI API (Current)
 - Ollama (Coming Soon)
 - Google Gemini (Coming Soon)
 - Anthropic Claude (Coming Soon)
 
-### Supported Languages
+#### Supported Languages
 
 - Arabic (العربية)
 - Chinese (中文)
@@ -90,7 +259,7 @@ The `translate` command allows you to translate markdown files or directories to
 - Thai (ไทย)
 - Vietnamese (Tiếng Việt)
 
-### Configuration
+#### Configuration
 
 Create a configuration file at `~/.config/mdctl/config.json` with the following content:
 
@@ -118,7 +287,7 @@ mdctl config set -k api_key -v "your-api-key"
 mdctl config set -k model -v "gpt-3.5-turbo"
 ```
 
-### Usage
+#### Usage
 
 ```bash
 # Translate a single file to Chinese
@@ -134,8 +303,7 @@ mdctl translate -f README.md -l ko -F
 mdctl translate -f docs -l fr -t translated_docs
 ```
 
-### Features
-
+Features:
 - Supports translating single files or entire directories
 - Maintains directory structure when translating directories
 - Adds front matter to track translation status
@@ -143,11 +311,11 @@ mdctl translate -f docs -l fr -t translated_docs
 - Supports translation between multiple languages
 - Shows translation progress with detailed status information
 
-## Config Command
+### `config` Command
 
 The `config` command allows you to manage your configuration settings.
 
-### Usage
+Usage:
 
 ```bash
 # List all configuration settings
@@ -163,7 +331,7 @@ mdctl config set -k model -v "gpt-4"
 mdctl config set -k temperature -v "0.8"
 ```
 
-### Available Configuration Keys
+Available Configuration Keys:
 
 - `translate_prompt`: The prompt template for translation
 - `endpoint`: AI model API endpoint URL

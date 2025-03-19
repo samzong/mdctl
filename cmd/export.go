@@ -20,7 +20,6 @@ var (
 	generateToc         bool
 	shiftHeadingLevelBy int
 	fileAsTitle         bool
-	verbose             bool
 	tocDepth            int
 	navPath             string
 	logger              *log.Logger
@@ -120,7 +119,6 @@ func init() {
 	exportCmd.Flags().BoolVar(&generateToc, "toc", false, "Generate table of contents")
 	exportCmd.Flags().IntVar(&shiftHeadingLevelBy, "shift-heading-level-by", 0, "Shift heading level by N")
 	exportCmd.Flags().BoolVar(&fileAsTitle, "file-as-title", false, "Use filename as section title")
-	exportCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 	exportCmd.Flags().IntVar(&tocDepth, "toc-depth", 3, "Depth of table of contents (default 3)")
 	exportCmd.Flags().StringVarP(&navPath, "nav-path", "n", "", "Specify the navigation path to export (e.g. 'Section1/Subsection2')")
 }
