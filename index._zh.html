@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Export 功能设计文档 mdctl</title>
+    <title>mdctl 的 llmstxt 功能设计文档 mdctl</title>
     <meta name="description" content="English Version | 中文版">
     <meta name="keywords" content="Markdown processor,CLI tool,Image downloader,Markdown translator,AI translation,Markdown automation,Remote image handling,Markdown utilities,AI-powered Markdown,Markdown enhancement,Markdown file management">
     <link rel="stylesheet" type="text/css" href="css/main.css?v=1.34.1">
@@ -47,6 +47,9 @@
           <li>使用相对路径更新 Markdown 文件中的图片引用</li>
           <li>详细的处理日志输出</li>
           <li>使用 AI 模型翻译 Markdown 文件，支持多种语言</li>
+          <li>从网站站点地图生成适用于训练语言模型的 llms.txt 文件</li>
+          <li>将 Markdown 文件导出为各种文档格式（DOCX、PDF、EPUB），支持多种自定义选项</li>
+          <li>将 Markdown 文件中的本地图片上传到云存储服务并更新引用</li>
         </ul>
         <h2 id="安装"><a aria-hidden="true" tabindex="-1" href="#安装" class="anchor"><span class="icon icon-link"></span></a>安装</h2>
         <p>使用 Homebrew 安装 mdctl。请参考 <a href="https://brew.sh/">Homebrew 安装指南</a> 安装 Homebrew。</p>
@@ -60,21 +63,69 @@ brew install samzong/tap/mdctl
 </span></code><input type="hidden" value="go install github.com/samzong/mdctl@latest
 "><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
         <h2 id="使用方法"><a aria-hidden="true" tabindex="-1" href="#使用方法" class="anchor"><span class="icon icon-link"></span></a>使用方法</h2>
-        <h3 id="下载远程图片"><a aria-hidden="true" tabindex="-1" href="#下载远程图片" class="anchor"><span class="icon icon-link"></span></a>下载远程图片</h3>
-        <p>处理单个文件：</p>
-        <pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line line-number" line="1">mdctl download <span class="token parameter variable">-f</span> path/to/your/file.md
-</span></code><input type="hidden" value="mdctl download -f path/to/your/file.md
+        <p>常见任务的快速示例：</p>
+        <h3 id="下载图片"><a aria-hidden="true" tabindex="-1" href="#下载图片" class="anchor"><span class="icon icon-link"></span></a>下载图片</h3>
+        <pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line line-number" line="1"><span class="token comment"># 处理单个文件</span>
+</span><span class="code-line line-number" line="2">mdctl download <span class="token parameter variable">-f</span> path/to/your/file.md
+</span><span class="code-line line-number" line="3">
+</span><span class="code-line line-number" line="4"><span class="token comment"># 处理整个目录</span>
+</span><span class="code-line line-number" line="5">mdctl download <span class="token parameter variable">-d</span> path/to/your/directory
+</span></code><input type="hidden" value="# 处理单个文件
+mdctl download -f path/to/your/file.md
+
+# 处理整个目录
+mdctl download -d path/to/your/directory
 "><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
-        <p>处理整个目录：</p>
-        <pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line line-number" line="1">mdctl download <span class="token parameter variable">-d</span> path/to/your/directory
-</span></code><input type="hidden" value="mdctl download -d path/to/your/directory
+        <h3 id="导出文档"><a aria-hidden="true" tabindex="-1" href="#导出文档" class="anchor"><span class="icon icon-link"></span></a>导出文档</h3>
+        <pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line line-number" line="1"><span class="token comment"># 导出为 DOCX</span>
+</span><span class="code-line line-number" line="2">mdctl <span class="token builtin class-name">export</span> <span class="token parameter variable">-f</span> README.md <span class="token parameter variable">-o</span> output.docx
+</span><span class="code-line line-number" line="3">
+</span><span class="code-line line-number" line="4"><span class="token comment"># 导出为带目录的 PDF</span>
+</span><span class="code-line line-number" line="5">mdctl <span class="token builtin class-name">export</span> <span class="token parameter variable">-d</span> docs/ <span class="token parameter variable">-o</span> documentation.pdf <span class="token parameter variable">-F</span> pdf <span class="token parameter variable">--toc</span>
+</span></code><input type="hidden" value="# 导出为 DOCX
+mdctl export -f README.md -o output.docx
+
+# 导出为带目录的 PDF
+mdctl export -d docs/ -o documentation.pdf -F pdf --toc
 "><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
-        <p>指定图片输出目录：</p>
-        <pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line line-number" line="1">mdctl download <span class="token parameter variable">-f</span> path/to/your/file.md <span class="token parameter variable">-o</span> path/to/images
-</span></code><input type="hidden" value="mdctl download -f path/to/your/file.md -o path/to/images
+        <h3 id="上传到云存储"><a aria-hidden="true" tabindex="-1" href="#上传到云存储" class="anchor"><span class="icon icon-link"></span></a>上传到云存储</h3>
+        <pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line line-number" line="1"><span class="token comment"># 上传单个文件中的图片</span>
+</span><span class="code-line line-number" line="2">mdctl upload <span class="token parameter variable">-f</span> post.md
+</span><span class="code-line line-number" line="3">
+</span><span class="code-line line-number" line="4"><span class="token comment"># 上传目录中的图片</span>
+</span><span class="code-line line-number" line="5">mdctl upload <span class="token parameter variable">-d</span> docs/
+</span></code><input type="hidden" value="# 上传单个文件中的图片
+mdctl upload -f post.md
+
+# 上传目录中的图片
+mdctl upload -d docs/
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <h3 id="翻译内容"><a aria-hidden="true" tabindex="-1" href="#翻译内容" class="anchor"><span class="icon icon-link"></span></a>翻译内容</h3>
+        <pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line line-number" line="1"><span class="token comment"># 翻译为中文</span>
+</span><span class="code-line line-number" line="2">mdctl translate <span class="token parameter variable">-f</span> README.md <span class="token parameter variable">-l</span> zh
+</span><span class="code-line line-number" line="3">
+</span><span class="code-line line-number" line="4"><span class="token comment"># 将目录翻译为日语</span>
+</span><span class="code-line line-number" line="5">mdctl translate <span class="token parameter variable">-d</span> docs/ <span class="token parameter variable">-l</span> ja
+</span></code><input type="hidden" value="# 翻译为中文
+mdctl translate -f README.md -l zh
+
+# 将目录翻译为日语
+mdctl translate -d docs/ -l ja
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <h3 id="生成-llmstxt"><a aria-hidden="true" tabindex="-1" href="#生成-llmstxt" class="anchor"><span class="icon icon-link"></span></a>生成 LLMS.txt</h3>
+        <pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line line-number" line="1"><span class="token comment"># 标准模式（标题和描述）</span>
+</span><span class="code-line line-number" line="2">mdctl llmstxt https://example.com/sitemap.xml <span class="token operator">></span> llms.txt
+</span><span class="code-line line-number" line="3">
+</span><span class="code-line line-number" line="4"><span class="token comment"># 全内容模式</span>
+</span><span class="code-line line-number" line="5">mdctl llmstxt <span class="token parameter variable">-f</span> https://example.com/sitemap.xml <span class="token operator">></span> llms-full.txt
+</span></code><input type="hidden" value="# 标准模式（标题和描述）
+mdctl llmstxt https://example.com/sitemap.xml > llms.txt
+
+# 全内容模式
+mdctl llmstxt -f https://example.com/sitemap.xml > llms-full.txt
 "><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
         <h2 id="命令说明"><a aria-hidden="true" tabindex="-1" href="#命令说明" class="anchor"><span class="icon icon-link"></span></a>命令说明</h2>
-        <h3 id="download-命令"><a aria-hidden="true" tabindex="-1" href="#download-命令" class="anchor"><span class="icon icon-link"></span></a>download 命令</h3>
+        <h3 id="download-命令"><a aria-hidden="true" tabindex="-1" href="#download-命令" class="anchor"><span class="icon icon-link"></span></a><code>download</code> 命令</h3>
         <p>下载并本地化 Markdown 文件中的远程图片。</p>
         <p>参数：</p>
         <ul>
@@ -87,16 +138,191 @@ brew install samzong/tap/mdctl
             </ul>
           </li>
         </ul>
-        <h2 id="翻译命令"><a aria-hidden="true" tabindex="-1" href="#翻译命令" class="anchor"><span class="icon icon-link"></span></a>翻译命令</h2>
+        <h3 id="export-命令"><a aria-hidden="true" tabindex="-1" href="#export-命令" class="anchor"><span class="icon icon-link"></span></a><code>export</code> 命令</h3>
+        <p><code>export</code> 命令使用 Pandoc 作为底层转换工具，将 Markdown 文件转换为各种文档格式，如 DOCX、PDF 和 EPUB。</p>
+        <p>功能特点：</p>
+        <ul>
+          <li>支持导出单个文件或整个目录</li>
+          <li>从 Markdown 内容生成专业文档</li>
+          <li>支持多种文档格式（DOCX、PDF、EPUB）</li>
+          <li>生成目录</li>
+          <li>自定义文档模板</li>
+          <li>标题级别调整</li>
+          <li>支持不同的站点结构（basic、MkDocs、Hugo、Docusaurus）</li>
+        </ul>
+        <p>使用方法：</p>
+        <pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line line-number" line="1"><span class="token comment"># 将单个文件导出为 DOCX</span>
+</span><span class="code-line line-number" line="2">mdctl <span class="token builtin class-name">export</span> <span class="token parameter variable">-f</span> README.md <span class="token parameter variable">-o</span> output.docx
+</span><span class="code-line line-number" line="3">
+</span><span class="code-line line-number" line="4"><span class="token comment"># 将目录导出为 PDF</span>
+</span><span class="code-line line-number" line="5">mdctl <span class="token builtin class-name">export</span> <span class="token parameter variable">-d</span> docs/ <span class="token parameter variable">-o</span> documentation.pdf <span class="token parameter variable">-F</span> pdf
+</span><span class="code-line line-number" line="6">
+</span><span class="code-line line-number" line="7"><span class="token comment"># 使用模板并生成目录</span>
+</span><span class="code-line line-number" line="8">mdctl <span class="token builtin class-name">export</span> <span class="token parameter variable">-d</span> docs/ <span class="token parameter variable">-o</span> report.docx <span class="token parameter variable">-t</span> templates/corporate.docx <span class="token parameter variable">--toc</span>
+</span><span class="code-line line-number" line="9">
+</span><span class="code-line line-number" line="10"><span class="token comment"># 调整标题级别导出</span>
+</span><span class="code-line line-number" line="11">mdctl <span class="token builtin class-name">export</span> <span class="token parameter variable">-d</span> docs/ <span class="token parameter variable">-o</span> documentation.docx --shift-heading-level-by <span class="token number">2</span>
+</span><span class="code-line line-number" line="12">
+</span><span class="code-line line-number" line="13"><span class="token comment"># 从特定类型的站点导出（MkDocs、Hugo 等）</span>
+</span><span class="code-line line-number" line="14">mdctl <span class="token builtin class-name">export</span> <span class="token parameter variable">-d</span> docs/ <span class="token parameter variable">-s</span> mkdocs <span class="token parameter variable">-o</span> site_docs.docx
+</span></code><input type="hidden" value="# 将单个文件导出为 DOCX
+mdctl export -f README.md -o output.docx
+
+# 将目录导出为 PDF
+mdctl export -d docs/ -o documentation.pdf -F pdf
+
+# 使用模板并生成目录
+mdctl export -d docs/ -o report.docx -t templates/corporate.docx --toc
+
+# 调整标题级别导出
+mdctl export -d docs/ -o documentation.docx --shift-heading-level-by 2
+
+# 从特定类型的站点导出（MkDocs、Hugo 等）
+mdctl export -d docs/ -s mkdocs -o site_docs.docx
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <p>参数：</p>
+        <ul>
+          <li><code>-f, --file</code>: 要导出的源 Markdown 文件</li>
+          <li><code>-d, --dir</code>: 包含要导出的 Markdown 文件的源目录</li>
+          <li><code>-o, --output</code>: 输出文件路径（必需）</li>
+          <li><code>-F, --format</code>: 输出格式（docx、pdf、epub）（默认：docx）</li>
+          <li><code>-t, --template</code>: Word 模板文件路径</li>
+          <li><code>-s, --site-type</code>: 站点类型（basic、mkdocs、hugo、docusaurus）（默认：basic）</li>
+          <li><code>--toc</code>: 生成目录</li>
+          <li><code>--toc-depth</code>: 目录深度（默认：3）</li>
+          <li><code>--shift-heading-level-by</code>: 标题级别偏移量</li>
+          <li><code>--file-as-title</code>: 使用文件名作为章节标题</li>
+          <li><code>-n, --nav-path</code>: 指定要导出的导航路径</li>
+          <li><code>-v, --verbose</code>: 启用详细输出</li>
+        </ul>
+        <h3 id="upload-命令"><a aria-hidden="true" tabindex="-1" href="#upload-命令" class="anchor"><span class="icon icon-link"></span></a><code>upload</code> 命令</h3>
+        <p><code>upload</code> 命令将 Markdown 文件中的本地图片上传到云存储，并重写 URL 以引用上传后的版本。</p>
+        <p>功能特点：</p>
+        <ul>
+          <li>支持具有 S3 兼容 API 的多种云存储提供商</li>
+          <li>保持相对链接结构</li>
+          <li>可配置的上传路径前缀</li>
+          <li>生成 URL 的自定义域名支持</li>
+          <li>冲突解决策略</li>
+          <li>并行上传提高性能</li>
+          <li>预览模式以查看更改而不实际上传</li>
+        </ul>
+        <p>使用方法：</p>
+        <pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line line-number" line="1"><span class="token comment"># 上传单个文件中的图片</span>
+</span><span class="code-line line-number" line="2">mdctl upload <span class="token parameter variable">-f</span> post.md
+</span><span class="code-line line-number" line="3">
+</span><span class="code-line line-number" line="4"><span class="token comment"># 上传目录中的图片</span>
+</span><span class="code-line line-number" line="5">mdctl upload <span class="token parameter variable">-d</span> docs/
+</span><span class="code-line line-number" line="6">
+</span><span class="code-line line-number" line="7"><span class="token comment"># 使用特定提供商和存储桶上传</span>
+</span><span class="code-line line-number" line="8">mdctl upload <span class="token parameter variable">-f</span> post.md <span class="token parameter variable">-p</span> s3 <span class="token parameter variable">-b</span> my-bucket
+</span><span class="code-line line-number" line="9">
+</span><span class="code-line line-number" line="10"><span class="token comment"># 使用自定义域名生成 URL</span>
+</span><span class="code-line line-number" line="11">mdctl upload <span class="token parameter variable">-f</span> post.md <span class="token parameter variable">-c</span> images.example.com
+</span><span class="code-line line-number" line="12">
+</span><span class="code-line line-number" line="13"><span class="token comment"># 预览更改而不上传</span>
+</span><span class="code-line line-number" line="14">mdctl upload <span class="token parameter variable">-f</span> post.md --dry-run
+</span><span class="code-line line-number" line="15">
+</span><span class="code-line line-number" line="16"><span class="token comment"># 强制上传即使文件已存在</span>
+</span><span class="code-line line-number" line="17">mdctl upload <span class="token parameter variable">-f</span> post.md <span class="token parameter variable">--force</span>
+</span></code><input type="hidden" value="# 上传单个文件中的图片
+mdctl upload -f post.md
+
+# 上传目录中的图片
+mdctl upload -d docs/
+
+# 使用特定提供商和存储桶上传
+mdctl upload -f post.md -p s3 -b my-bucket
+
+# 使用自定义域名生成 URL
+mdctl upload -f post.md -c images.example.com
+
+# 预览更改而不上传
+mdctl upload -f post.md --dry-run
+
+# 强制上传即使文件已存在
+mdctl upload -f post.md --force
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <p>参数：</p>
+        <ul>
+          <li><code>-f, --file</code>: 要处理的源 Markdown 文件</li>
+          <li><code>-d, --dir</code>: 包含要处理的 Markdown 文件的源目录</li>
+          <li><code>-p, --provider</code>: 云存储提供商（s3、r2、minio）</li>
+          <li><code>-b, --bucket</code>: 云存储桶名称</li>
+          <li><code>-c, --custom-domain</code>: 生成 URL 的自定义域名</li>
+          <li><code>--prefix</code>: 上传文件的路径前缀</li>
+          <li><code>--dry-run</code>: 预览更改而不上传</li>
+          <li><code>--concurrency</code>: 并行上传数量（默认：5）</li>
+          <li><code>-F, --force</code>: 即使文件存在也强制上传</li>
+          <li><code>--skip-verify</code>: 跳过 SSL 验证</li>
+          <li><code>--ca-cert</code>: CA 证书路径</li>
+          <li><code>--conflict</code>: 冲突策略（rename、version、overwrite）（默认：rename）</li>
+          <li><code>--cache-dir</code>: 缓存目录路径</li>
+          <li><code>--include</code>: 要包含的文件扩展名（逗号分隔列表）</li>
+          <li><code>--storage</code>: 使用的存储配置名称</li>
+          <li><code>-v, --verbose</code>: 启用详细输出</li>
+        </ul>
+        <h3 id="llmstxt-命令"><a aria-hidden="true" tabindex="-1" href="#llmstxt-命令" class="anchor"><span class="icon icon-link"></span></a><code>llmstxt</code> 命令</h3>
+        <p><code>llmstxt</code> 命令从网站的 sitemap.xml 生成一个适用于训练或微调语言模型的 llms.txt 文件。</p>
+        <p>功能特点：</p>
+        <ul>
+          <li>以结构化格式提取网站内容</li>
+          <li>支持标准模式（仅标题和描述）和全内容模式</li>
+          <li>允许使用包含/排除模式过滤页面</li>
+          <li>可配置的并发和超时设置</li>
+          <li>输出到文件或标准输出</li>
+        </ul>
+        <p>使用方法：</p>
+        <pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line line-number" line="1"><span class="token comment"># 标准模式 - 仅提取标题和描述</span>
+</span><span class="code-line line-number" line="2">mdctl llmstxt https://example.com/sitemap.xml <span class="token operator">></span> llms.txt
+</span><span class="code-line line-number" line="3">
+</span><span class="code-line line-number" line="4"><span class="token comment"># 全内容模式 - 提取完整页面内容</span>
+</span><span class="code-line line-number" line="5">mdctl llmstxt <span class="token parameter variable">-f</span> https://example.com/sitemap.xml <span class="token operator">></span> llms-full.txt
+</span><span class="code-line line-number" line="6">
+</span><span class="code-line line-number" line="7"><span class="token comment"># 指定输出文件</span>
+</span><span class="code-line line-number" line="8">mdctl llmstxt <span class="token parameter variable">-o</span> output.txt https://example.com/sitemap.xml
+</span><span class="code-line line-number" line="9">
+</span><span class="code-line line-number" line="10"><span class="token comment"># 包含/排除特定路径</span>
+</span><span class="code-line line-number" line="11">mdctl llmstxt <span class="token parameter variable">-i</span> <span class="token string">"/blog/*"</span> <span class="token parameter variable">-e</span> <span class="token string">"/blog/draft/*"</span> https://example.com/sitemap.xml
+</span><span class="code-line line-number" line="12">
+</span><span class="code-line line-number" line="13"><span class="token comment"># 配置并发和超时</span>
+</span><span class="code-line line-number" line="14">mdctl llmstxt <span class="token parameter variable">-c</span> <span class="token number">10</span> <span class="token parameter variable">--timeout</span> <span class="token number">60</span> https://example.com/sitemap.xml
+</span></code><input type="hidden" value="# 标准模式 - 仅提取标题和描述
+mdctl llmstxt https://example.com/sitemap.xml > llms.txt
+
+# 全内容模式 - 提取完整页面内容
+mdctl llmstxt -f https://example.com/sitemap.xml > llms-full.txt
+
+# 指定输出文件
+mdctl llmstxt -o output.txt https://example.com/sitemap.xml
+
+# 包含/排除特定路径
+mdctl llmstxt -i &#x22;/blog/*&#x22; -e &#x22;/blog/draft/*&#x22; https://example.com/sitemap.xml
+
+# 配置并发和超时
+mdctl llmstxt -c 10 --timeout 60 https://example.com/sitemap.xml
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <p>参数：</p>
+        <ul>
+          <li><code>[url]</code>: sitemap.xml 文件的 URL（必需）</li>
+          <li><code>-o, --output</code>: 输出文件路径（默认：标准输出）</li>
+          <li><code>-i, --include-path</code>: 要包含的路径的 Glob 模式（可多次指定）</li>
+          <li><code>-e, --exclude-path</code>: 要排除的路径的 Glob 模式（可多次指定）</li>
+          <li><code>-f, --full</code>: 启用全内容模式（提取页面内容）</li>
+          <li><code>-c, --concurrency</code>: 并发请求数（默认：5）</li>
+          <li><code>--timeout</code>: 请求超时（秒）（默认：30）</li>
+          <li><code>-v, --verbose</code>: 启用详细输出</li>
+        </ul>
+        <h3 id="translate-命令"><a aria-hidden="true" tabindex="-1" href="#translate-命令" class="anchor"><span class="icon icon-link"></span></a><code>translate</code> 命令</h3>
         <p><code>translate</code> 命令允许你使用 AI 模型将 Markdown 文件或目录翻译成指定的语言。</p>
-        <h3 id="支持的-ai-模型"><a aria-hidden="true" tabindex="-1" href="#支持的-ai-模型" class="anchor"><span class="icon icon-link"></span></a>支持的 AI 模型</h3>
+        <h4 id="支持的-ai-模型"><a aria-hidden="true" tabindex="-1" href="#支持的-ai-模型" class="anchor"><span class="icon icon-link"></span></a>支持的 AI 模型</h4>
         <ul>
           <li>OpenAI API（当前支持）</li>
           <li>Ollama（即将支持）</li>
           <li>Google Gemini（即将支持）</li>
           <li>Anthropic Claude（即将支持）</li>
         </ul>
-        <h3 id="支持的语言"><a aria-hidden="true" tabindex="-1" href="#支持的语言" class="anchor"><span class="icon icon-link"></span></a>支持的语言</h3>
+        <h4 id="支持的语言"><a aria-hidden="true" tabindex="-1" href="#支持的语言" class="anchor"><span class="icon icon-link"></span></a>支持的语言</h4>
         <ul>
           <li>阿拉伯语 (العربية)</li>
           <li>中文 (中文)</li>
@@ -113,7 +339,7 @@ brew install samzong/tap/mdctl
           <li>泰语 (ไทย)</li>
           <li>越南语 (Tiếng Việt)</li>
         </ul>
-        <h3 id="配置"><a aria-hidden="true" tabindex="-1" href="#配置" class="anchor"><span class="icon icon-link"></span></a>配置</h3>
+        <h4 id="配置"><a aria-hidden="true" tabindex="-1" href="#配置" class="anchor"><span class="icon icon-link"></span></a>配置</h4>
         <p>在 <code>~/.config/mdctl/config.json</code> 创建配置文件，内容如下：</p>
         <pre class="language-json"><code class="language-json code-highlight"><span class="code-line line-number" line="1"><span class="token punctuation">{</span>
 </span><span class="code-line line-number" line="2">  <span class="token property">"translate_prompt"</span><span class="token operator">:</span> <span class="token string">"Please translate the following markdown content to {TARGET_LANG}, keep the markdown format and front matter unchanged:"</span><span class="token punctuation">,</span>
@@ -150,7 +376,7 @@ mdctl config set -k api_key -v &#x22;你的API密钥&#x22;
 # 设置模型
 mdctl config set -k model -v &#x22;gpt-3.5-turbo&#x22;
 "><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
-        <h3 id="使用方法-1"><a aria-hidden="true" tabindex="-1" href="#使用方法-1" class="anchor"><span class="icon icon-link"></span></a>使用方法</h3>
+        <h4 id="使用方法-1"><a aria-hidden="true" tabindex="-1" href="#使用方法-1" class="anchor"><span class="icon icon-link"></span></a>使用方法</h4>
         <pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line line-number" line="1"><span class="token comment"># 将单个文件翻译成中文</span>
 </span><span class="code-line line-number" line="2">mdctl translate <span class="token parameter variable">-f</span> README.md <span class="token parameter variable">-l</span> zh
 </span><span class="code-line line-number" line="3">
@@ -174,7 +400,7 @@ mdctl translate -f README.md -l ko -F
 # 翻译到指定的输出路径
 mdctl translate -f docs -l fr -t translated_docs
 "><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
-        <h3 id="功能特点-1"><a aria-hidden="true" tabindex="-1" href="#功能特点-1" class="anchor"><span class="icon icon-link"></span></a>功能特点</h3>
+        <p>功能特点：</p>
         <ul>
           <li>支持翻译单个文件或整个目录</li>
           <li>翻译目录时保持目录结构</li>
@@ -183,9 +409,9 @@ mdctl translate -f docs -l fr -t translated_docs
           <li>支持多种语言之间的翻译</li>
           <li>显示详细的翻译进度和状态信息</li>
         </ul>
-        <h2 id="配置命令"><a aria-hidden="true" tabindex="-1" href="#配置命令" class="anchor"><span class="icon icon-link"></span></a>配置命令</h2>
+        <h3 id="config-命令"><a aria-hidden="true" tabindex="-1" href="#config-命令" class="anchor"><span class="icon icon-link"></span></a><code>config</code> 命令</h3>
         <p><code>config</code> 命令允许你管理配置设置。</p>
-        <h3 id="使用方法-2"><a aria-hidden="true" tabindex="-1" href="#使用方法-2" class="anchor"><span class="icon icon-link"></span></a>使用方法</h3>
+        <p>使用方法：</p>
         <pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line line-number" line="1"><span class="token comment"># 列出所有配置设置</span>
 </span><span class="code-line line-number" line="2">mdctl config list
 </span><span class="code-line line-number" line="3">
@@ -209,7 +435,7 @@ mdctl config set -k api_key -v &#x22;你的API密钥&#x22;
 mdctl config set -k model -v &#x22;gpt-4&#x22;
 mdctl config set -k temperature -v &#x22;0.8&#x22;
 "><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
-        <h3 id="可用的配置项"><a aria-hidden="true" tabindex="-1" href="#可用的配置项" class="anchor"><span class="icon icon-link"></span></a>可用的配置项</h3>
+        <p>可用的配置项：</p>
         <ul>
           <li><code>translate_prompt</code>: 翻译提示模板</li>
           <li><code>endpoint</code>: AI 模型 API 端点 URL</li>
