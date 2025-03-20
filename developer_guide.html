@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mdctl 项目开发文档 mdctl</title>
+    <meta name="description" content="mdctl 是一个用于处理 Markdown 文件的命令行工具，主要功能包括：">
+    <meta name="keywords" content="Markdown processor,CLI tool,Image downloader,Markdown translator,AI translation,Markdown automation,Remote image handling,Markdown utilities,AI-powered Markdown,Markdown enhancement,Markdown file management">
+    <link rel="stylesheet" type="text/css" href="css/main.css?v=1.34.1">
+    <link rel="stylesheet" type="text/css" href="css/tocbot.css?v=1.34.1">
+    <link rel="stylesheet" type="text/css" href="css/media.css?v=1.34.1">
+    <link rel="stylesheet" type="text/css" href="css/sidebar.css?v=1.34.1">
+    <link rel="stylesheet" type="text/css" href="css/copy.css?v=1.34.1">
+    <link rel="stylesheet" type="text/css" href="css/demo-preview.css?v=1.34.1">
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+    <script src="js/copy.js?v=1.34.1"></script>
+    <script src="js/dark-mode.js?v=1.34.1"></script>
+    <script src="js/markdown-style.js?v=1.34.1"></script>
+  </head>
+  <body id="idoctotop"><a href="#idoctotop" class="gototop">top</a>
+    <header class="header">
+      <article class="inner warpper" style="max-width:720px;"><a class="logo" href="index.html"><img alt="mdctl logo" src="assets/icon.png">
+<span class="title">mdctl</span></a>
+        <div class="content">
+          <ul class="menu">
+            <li><a href="index.html" target="" class="">Home</a></li>
+            <li><a href="https://github.com/samzong" target="__blank" class="">About</a></li>
+          </ul><a href="https://github.com/samzong/mdctl" target="_blank" rel="noopener noreferrer" title="Github" name="Github" class="github"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+            </svg></a>
+          <dark-mode permanent=""></dark-mode>
+        </div>
+      </article>
+    </header>
+    <div style="max-width:720px;" class="warpper-content warpper notocs">
+      <markdown-style theme-auto-switch-disabled="">
+        <h1 id="mdctl-项目开发文档"><a aria-hidden="true" tabindex="-1" href="#mdctl-项目开发文档" class="anchor"><span class="icon icon-link"></span></a>mdctl 项目开发文档</h1>
+        <h2 id="项目概述"><a aria-hidden="true" tabindex="-1" href="#项目概述" class="anchor"><span class="icon icon-link"></span></a>项目概述</h2>
+        <p>mdctl 是一个用于处理 Markdown 文件的命令行工具，主要功能包括：</p>
+        <ol>
+          <li><strong>下载功能</strong>：自动下载 Markdown 文件中的远程图片到本地，并更新引用路径</li>
+          <li><strong>翻译功能</strong>：使用 AI 模型将 Markdown 文件翻译成多种语言</li>
+          <li><strong>上传功能</strong>：将本地图片上传到云存储，并更新 Markdown 文件中的引用</li>
+          <li><strong>配置管理</strong>：管理工具的配置信息</li>
+        </ol>
+        <h2 id="项目结构"><a aria-hidden="true" tabindex="-1" href="#项目结构" class="anchor"><span class="icon icon-link"></span></a>项目结构</h2>
+        <pre><code class="code-highlight"><span class="code-line line-number" line="1">mdctl/
+</span><span class="code-line line-number" line="2">├── cmd/                  # 命令行入口
+</span><span class="code-line line-number" line="3">│   ├── root.go           # 根命令定义
+</span><span class="code-line line-number" line="4">│   ├── download.go       # 下载命令
+</span><span class="code-line line-number" line="5">│   ├── translate.go      # 翻译命令
+</span><span class="code-line line-number" line="6">│   ├── upload.go         # 上传命令
+</span><span class="code-line line-number" line="7">│   └── config.go         # 配置命令
+</span><span class="code-line line-number" line="8">├── internal/             # 内部实现
+</span><span class="code-line line-number" line="9">│   ├── processor/        # 下载处理器
+</span><span class="code-line line-number" line="10">│   ├── translator/       # 翻译处理器
+</span><span class="code-line line-number" line="11">│   ├── uploader/         # 上传处理器
+</span><span class="code-line line-number" line="12">│   ├── storage/          # 存储提供者
+</span><span class="code-line line-number" line="13">│   ├── config/           # 配置管理
+</span><span class="code-line line-number" line="14">│   ├── cache/            # 缓存管理
+</span><span class="code-line line-number" line="15">│   └── markdownfmt/      # Markdown 格式化
+</span><span class="code-line line-number" line="16">├── main.go               # 程序入口
+</span><span class="code-line line-number" line="17">└── go.mod                # Go 模块定义
+</span></code><input type="hidden" value="mdctl/
+├── cmd/                  # 命令行入口
+│   ├── root.go           # 根命令定义
+│   ├── download.go       # 下载命令
+│   ├── translate.go      # 翻译命令
+│   ├── upload.go         # 上传命令
+│   └── config.go         # 配置命令
+├── internal/             # 内部实现
+│   ├── processor/        # 下载处理器
+│   ├── translator/       # 翻译处理器
+│   ├── uploader/         # 上传处理器
+│   ├── storage/          # 存储提供者
+│   ├── config/           # 配置管理
+│   ├── cache/            # 缓存管理
+│   └── markdownfmt/      # Markdown 格式化
+├── main.go               # 程序入口
+└── go.mod                # Go 模块定义
+"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
+        <h2 id="核心模块说明"><a aria-hidden="true" tabindex="-1" href="#核心模块说明" class="anchor"><span class="icon icon-link"></span></a>核心模块说明</h2>
+        <h3 id="命令行模块-cmd"><a aria-hidden="true" tabindex="-1" href="#命令行模块-cmd" class="anchor"><span class="icon icon-link"></span></a>命令行模块 (cmd/)</h3>
+        <p>使用 <a href="https://github.com/spf13/cobra">Cobra</a> 库实现命令行界面，主要命令包括：</p>
+        <ul>
+          <li><strong>root</strong>: 根命令，定义基本信息和版本</li>
+          <li><strong>download</strong>: 下载远程图片到本地</li>
+          <li><strong>translate</strong>: 翻译 Markdown 文件</li>
+          <li><strong>upload</strong>: 上传本地图片到云存储</li>
+          <li><strong>config</strong>: 管理配置信息</li>
+        </ul>
+        <h3 id="处理器模块-internalprocessor"><a aria-hidden="true" tabindex="-1" href="#处理器模块-internalprocessor" class="anchor"><span class="icon icon-link"></span></a>处理器模块 (internal/processor/)</h3>
+        <p>负责处理 Markdown 文件中的远程图片下载，主要功能：</p>
+        <ul>
+          <li>解析 Markdown 文件中的图片链接</li>
+          <li>下载远程图片到本地</li>
+          <li>更新 Markdown 文件中的图片引用路径</li>
+        </ul>
+        <h3 id="翻译模块-internaltranslator"><a aria-hidden="true" tabindex="-1" href="#翻译模块-internaltranslator" class="anchor"><span class="icon icon-link"></span></a>翻译模块 (internal/translator/)</h3>
+        <p>负责翻译 Markdown 文件，主要功能：</p>
+        <ul>
+          <li>支持多种语言翻译</li>
+          <li>保持 Markdown 格式和 front matter 不变</li>
+          <li>使用 AI 模型进行翻译</li>
+          <li>支持目录结构的翻译</li>
+        </ul>
+        <h3 id="上传模块-internaluploader"><a aria-hidden="true" tabindex="-1" href="#上传模块-internaluploader" class="anchor"><span class="icon icon-link"></span></a>上传模块 (internal/uploader/)</h3>
+        <p>负责上传本地图片到云存储，主要功能：</p>
+        <ul>
+          <li>解析 Markdown 文件中的本地图片链接</li>
+          <li>上传图片到云存储</li>
+          <li>更新 Markdown 文件中的图片引用路径</li>
+          <li>支持多种冲突处理策略</li>
+        </ul>
+        <h3 id="存储模块-internalstorage"><a aria-hidden="true" tabindex="-1" href="#存储模块-internalstorage" class="anchor"><span class="icon icon-link"></span></a>存储模块 (internal/storage/)</h3>
+        <p>定义存储提供者接口和实现，主要功能：</p>
+        <ul>
+          <li>提供统一的存储接口</li>
+          <li>支持 S3 兼容的存储服务</li>
+          <li>处理文件上传和元数据管理</li>
+        </ul>
+        <h3 id="配置模块-internalconfig"><a aria-hidden="true" tabindex="-1" href="#配置模块-internalconfig" class="anchor"><span class="icon icon-link"></span></a>配置模块 (internal/config/)</h3>
+        <p>负责管理配置信息，主要功能：</p>
+        <ul>
+          <li>加载和保存配置文件</li>
+          <li>管理 AI 模型配置</li>
+          <li>管理云存储配置</li>
+        </ul>
+        <h2 id="开发风格和约定"><a aria-hidden="true" tabindex="-1" href="#开发风格和约定" class="anchor"><span class="icon icon-link"></span></a>开发风格和约定</h2>
+        <h3 id="代码组织"><a aria-hidden="true" tabindex="-1" href="#代码组织" class="anchor"><span class="icon icon-link"></span></a>代码组织</h3>
+        <ol>
+          <li><strong>命令与实现分离</strong>：命令行接口在 <code>cmd/</code> 目录，具体实现在 <code>internal/</code> 目录</li>
+          <li><strong>模块化设计</strong>：每个功能都有独立的模块，如处理器、翻译器、上传器等</li>
+          <li><strong>接口定义</strong>：使用接口定义模块间交互，如存储提供者接口</li>
+        </ol>
+        <h3 id="错误处理"><a aria-hidden="true" tabindex="-1" href="#错误处理" class="anchor"><span class="icon icon-link"></span></a>错误处理</h3>
+        <p>错误处理采用 Go 语言的标准方式，通过返回错误值进行传递和处理。</p>
+        <h3 id="配置管理"><a aria-hidden="true" tabindex="-1" href="#配置管理" class="anchor"><span class="icon icon-link"></span></a>配置管理</h3>
+        <p>配置文件存储在 <code>~/.config/mdctl/config.json</code>，包含：</p>
+        <ul>
+          <li>AI 模型配置（端点、API 密钥、模型名称等）</li>
+          <li>云存储配置（提供者、区域、访问密钥等）</li>
+        </ul>
+        <h3 id="日志输出"><a aria-hidden="true" tabindex="-1" href="#日志输出" class="anchor"><span class="icon icon-link"></span></a>日志输出</h3>
+        <p>使用标准输出进行日志记录，提供详细的处理信息和错误信息。</p>
+        <h2 id="添加新功能的步骤"><a aria-hidden="true" tabindex="-1" href="#添加新功能的步骤" class="anchor"><span class="icon icon-link"></span></a>添加新功能的步骤</h2>
+        <ol>
+          <li><strong>定义命令</strong>：在 <code>cmd/</code> 目录下创建新的命令文件，定义命令行接口</li>
+          <li><strong>实现功能</strong>：在 <code>internal/</code> 目录下创建相应的实现模块</li>
+          <li><strong>注册命令</strong>：在 <code>cmd/root.go</code> 的 <code>init()</code> 函数中注册新命令</li>
+          <li><strong>更新文档</strong>：更新 README 文件，添加新功能的说明</li>
+        </ol>
+        <h2 id="测试"><a aria-hidden="true" tabindex="-1" href="#测试" class="anchor"><span class="icon icon-link"></span></a>测试</h2>
+        <p>目前项目没有明确的测试框架，建议为新功能添加单元测试和集成测试。</p>
+        <h2 id="构建和发布"><a aria-hidden="true" tabindex="-1" href="#构建和发布" class="anchor"><span class="icon icon-link"></span></a>构建和发布</h2>
+        <p>项目使用 Makefile 和 GoReleaser 进行构建和发布：</p>
+        <ul>
+          <li><strong>构建</strong>：使用 <code>make build</code> 命令构建项目</li>
+          <li><strong>发布</strong>：使用 <code>make release</code> 命令发布新版本</li>
+        </ul>
+        <h2 id="扩展点"><a aria-hidden="true" tabindex="-1" href="#扩展点" class="anchor"><span class="icon icon-link"></span></a>扩展点</h2>
+        <h3 id="添加新的存储提供者"><a aria-hidden="true" tabindex="-1" href="#添加新的存储提供者" class="anchor"><span class="icon icon-link"></span></a>添加新的存储提供者</h3>
+        <ol>
+          <li>在 <code>internal/storage/</code> 目录下创建新的提供者实现</li>
+          <li>实现 <code>Provider</code> 接口</li>
+          <li>在初始化时注册提供者</li>
+        </ol>
+        <h3 id="添加新的-ai-模型支持"><a aria-hidden="true" tabindex="-1" href="#添加新的-ai-模型支持" class="anchor"><span class="icon icon-link"></span></a>添加新的 AI 模型支持</h3>
+        <ol>
+          <li>在 <code>internal/translator/</code> 目录下扩展翻译器实现</li>
+          <li>添加新模型的 API 调用</li>
+          <li>更新配置模块以支持新模型的配置</li>
+        </ol>
+        <h3 id="添加新的-markdown-处理功能"><a aria-hidden="true" tabindex="-1" href="#添加新的-markdown-处理功能" class="anchor"><span class="icon icon-link"></span></a>添加新的 Markdown 处理功能</h3>
+        <ol>
+          <li>创建新的处理器模块</li>
+          <li>实现 Markdown 解析和处理逻辑</li>
+          <li>添加新的命令行接口</li>
+        </ol>
+      </markdown-style>
+    </div>
+    <script src="js/demo-preview.js?v=1.34.1"></script>
+    <div class="footer warpper" style="max-width:720px;">Copyright © 2025 <a href="https://github.com/samzong" target="_blank">samzong</a><br></div>
+    <script src="js/tocbot.js?v=1.34.1"></script>
+  </body>
+</html>
