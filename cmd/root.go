@@ -8,9 +8,10 @@ import (
 )
 
 var (
-	Version   = "dev"
-	BuildTime = "unknown"
-	verbose   bool
+	Version     = "dev"
+	BuildTime   = "unknown"
+	verbose     bool
+	veryVerbose bool
 
 	rootCmd = &cobra.Command{
 		Use:   "mdctl",
@@ -38,6 +39,7 @@ func init() {
 
 	// Add global flags
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
+	rootCmd.PersistentFlags().BoolVar(&veryVerbose, "vv", false, "Enable very verbose output with detailed information")
 
 	// Then add groups and set group IDs
 	rootCmd.AddGroup(&cobra.Group{

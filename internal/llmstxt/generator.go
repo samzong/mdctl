@@ -19,6 +19,8 @@ type GeneratorConfig struct {
 	Timeout      int
 	UserAgent    string
 	Verbose      bool
+	VeryVerbose  bool // 更详细的日志输出
+	MaxPages     int  // 最大处理页数，0表示不限制
 }
 
 // PageInfo 存储页面的信息
@@ -39,7 +41,7 @@ type Generator struct {
 // NewGenerator 创建一个新的生成器实例
 func NewGenerator(config GeneratorConfig) *Generator {
 	var logger *log.Logger
-	if config.Verbose {
+	if config.Verbose || config.VeryVerbose {
 		logger = log.New(os.Stdout, "[LLMSTXT] ", log.LstdFlags)
 	} else {
 		logger = log.New(io.Discard, "", 0)
@@ -69,6 +71,12 @@ func (g *Generator) Generate() (string, error) {
 	// 2. 过滤URL（基于include/exclude模式）
 	urls = g.filterURLs(urls)
 	g.logger.Printf("%d URLs after filtering", len(urls))
+
+	// 2.1. 应用最大页数限制
+	if g.config.MaxPages > 0 && len(urls) > g.config.MaxPages {
+		g.logger.Printf("Limiting to %d pages as requested (--max-pages)", g.config.MaxPages)
+		urls = urls[:g.config.MaxPages]
+	}
 
 	// 3. 创建工作池并获取页面信息
 	pages, err := g.fetchPages(urls)
