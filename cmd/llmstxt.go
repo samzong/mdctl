@@ -15,6 +15,7 @@ var (
 	fullMode     bool
 	concurrency  int
 	timeout      int
+	maxPages     int
 
 	llmstxtCmd = &cobra.Command{
 		Use:   "llmstxt [url]",
@@ -46,6 +47,8 @@ Examples:
 				Timeout:      timeout,
 				UserAgent:    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
 				Verbose:      verbose,
+				VeryVerbose:  veryVerbose,
+				MaxPages:     maxPages,
 			}
 
 			generator := llmstxt.NewGenerator(config)
@@ -77,6 +80,7 @@ func init() {
 	llmstxtCmd.Flags().BoolVarP(&fullMode, "full", "f", false, "Enable full-content mode (extract page content)")
 	llmstxtCmd.Flags().IntVarP(&concurrency, "concurrency", "c", 5, "Number of concurrent requests")
 	llmstxtCmd.Flags().IntVar(&timeout, "timeout", 30, "Request timeout in seconds")
+	llmstxtCmd.Flags().IntVar(&maxPages, "max-pages", 0, "Maximum number of pages to process (0 for unlimited)")
 
 	// 将命令添加到核心命令组
 	llmstxtCmd.GroupID = "core"

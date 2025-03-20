@@ -26,20 +26,47 @@ func (g *Generator) extractPageInfo(urlStr string, resp *http.Response) (PageInf
 
 	// 提取标题
 	pageInfo.Title = extractTitle(doc)
+	if g.config.VeryVerbose {
+		g.logger.Printf("Extracted title from %s: %s", urlStr, pageInfo.Title)
+	}
+
 	if pageInfo.Title == "" {
 		// 如果无法提取标题，使用URL的最后一段作为标题
 		pageInfo.Title = extractTitleFromURL(urlStr)
+		if g.config.VeryVerbose {
+			g.logger.Printf("Could not extract title, using URL-based title instead: %s", pageInfo.Title)
+		}
 	}
 
 	// 提取描述
 	pageInfo.Description = extractDescription(doc)
+	if g.config.VeryVerbose {
+		g.logger.Printf("Extracted description from %s: %s", urlStr, truncateString(pageInfo.Description, 100))
+	}
 
 	// 在全文模式下提取正文内容
 	if g.config.FullMode {
+		if g.config.VeryVerbose {
+			g.logger.Printf("Extracting full content from %s", urlStr)
+		}
 		pageInfo.Content = extractContent(doc)
+		if g.config.VeryVerbose {
+			contentLen := len(pageInfo.Content)
+			preview := truncateString(pageInfo.Content, 100)
+			g.logger.Printf("Extracted content from %s (%d chars): %s", urlStr, contentLen, preview)
+		}
 	}
 
 	return pageInfo, nil
+}
+
+// 辅助函数：截断字符串并添加省略号
+func truncateString(s string, maxLen int) string {
+	s = strings.TrimSpace(s)
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
 }
 
 // 从URL中提取章节信息
