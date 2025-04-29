@@ -1,6 +1,6 @@
-# mdctl 项目开发文档
+# mdctl 开发者指南
 
-## 项目概述
+## 项目介绍
 
 mdctl 是一个用于处理 Markdown 文件的命令行工具，主要功能包括：
 
@@ -8,27 +8,33 @@ mdctl 是一个用于处理 Markdown 文件的命令行工具，主要功能包�
 2. **翻译功能**：使用 AI 模型将 Markdown 文件翻译成多种语言
 3. **上传功能**：将本地图片上传到云存储，并更新 Markdown 文件中的引用
 4. **配置管理**：管理工具的配置信息
+5. **其他功能**：如导出为其他格式、生成 llms.txt 文件等
 
 ## 项目结构
 
-```
-mdctl/
-├── cmd/                  # 命令行入口
-│   ├── root.go           # 根命令定义
-│   ├── download.go       # 下载命令
-│   ├── translate.go      # 翻译命令
-│   ├── upload.go         # 上传命令
-│   └── config.go         # 配置命令
-├── internal/             # 内部实现
-│   ├── processor/        # 下载处理器
-│   ├── translator/       # 翻译处理器
-│   ├── uploader/         # 上传处理器
-│   ├── storage/          # 存储提供者
-│   ├── config/           # 配置管理
-│   ├── cache/            # 缓存管理
-│   └── markdownfmt/      # Markdown 格式化
-├── main.go               # 程序入口
-└── go.mod                # Go 模块定义
+```bash
+../mdctl
+├── cmd
+│   ├── config.go
+│   ├── download.go
+│   ├── export.go
+│   ├── llmstxt.go
+│   ├── root.go
+│   ├── translate.go
+│   └── upload.go
+├── internal
+│   ├── cache
+│   ├── config
+│   ├── exporter
+│   ├── llmstxt
+│   ├── markdownfmt
+│   ├── processor
+│   ├── storage
+│   ├── translator
+│   └── uploader
+├── main.go
+├── go.mod
+├── go.sum
 ```
 
 ## 核心模块说明
@@ -77,6 +83,14 @@ mdctl/
 - 支持 S3 兼容的存储服务
 - 处理文件上传和元数据管理
 
+### llms.txt 生成模块 (internal/llmstxt/)
+
+负责从网站的 sitemap.xml 生成 llms.txt 文件，主要功能：
+
+- 解析 sitemap.xml 文件
+- 访问每个 URL 并提取页面内容
+- 生成格式化的 llms.txt 文档
+
 ### 配置模块 (internal/config/)
 
 负责管理配置信息，主要功能：
@@ -115,10 +129,6 @@ mdctl/
 3. **注册命令**：在 `cmd/root.go` 的 `init()` 函数中注册新命令
 4. **更新文档**：更新 README 文件，添加新功能的说明
 
-## 测试
-
-目前项目没有明确的测试框架，建议为新功能添加单元测试和集成测试。
-
 ## 构建和发布
 
 项目使用 Makefile 和 GoReleaser 进行构建和发布：
@@ -144,4 +154,4 @@ mdctl/
 
 1. 创建新的处理器模块
 2. 实现 Markdown 解析和处理逻辑
-3. 添加新的命令行接口 
+3. 添加新的命令行接口

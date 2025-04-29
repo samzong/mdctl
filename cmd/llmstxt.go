@@ -37,7 +37,7 @@ Examples:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			sitemapURL := args[0]
 
-			// 创建生成器并配置选项
+			// Create a generator and configure options
 			config := llmstxt.GeneratorConfig{
 				SitemapURL:   sitemapURL,
 				IncludePaths: includePaths,
@@ -53,18 +53,18 @@ Examples:
 
 			generator := llmstxt.NewGenerator(config)
 
-			// 执行生成
+			// Execute generation
 			content, err := generator.Generate()
 			if err != nil {
 				return err
 			}
 
-			// 输出内容
+			// Output content
 			if outputPath == "" {
-				// 输出到标准输出
+				// Output to standard output
 				fmt.Println(content)
 			} else {
-				// 输出到文件
+				// Output to file
 				return os.WriteFile(outputPath, []byte(content), 0644)
 			}
 
@@ -82,9 +82,8 @@ func init() {
 	llmstxtCmd.Flags().IntVar(&timeout, "timeout", 30, "Request timeout in seconds")
 	llmstxtCmd.Flags().IntVar(&maxPages, "max-pages", 0, "Maximum number of pages to process (0 for unlimited)")
 
-	// 将命令添加到核心命令组
+	// Add command to core group
 	llmstxtCmd.GroupID = "core"
 
-	// 注册到rootCmd
 	rootCmd.AddCommand(llmstxtCmd)
 }

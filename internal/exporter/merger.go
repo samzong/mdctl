@@ -15,20 +15,20 @@ import (
 	"golang.org/x/text/transform"
 )
 
-// Merger 负责合并多个 Markdown 文件
+// Merger Merge multiple Markdown files
 type Merger struct {
 	ShiftHeadingLevelBy int
 	FileAsTitle         bool
 	Logger              *log.Logger
-	// 存储所有源文件的目录，用于后续设置 Pandoc 的资源路径
+	// Store all source directories, used to set Pandoc's resource paths
 	SourceDirs []string
-	// 是否启用详细日志
+	// Whether to enable verbose logging
 	Verbose bool
 }
 
-// Merge 合并多个 Markdown 文件到一个目标文件
+// Merge Merge multiple Markdown files into a single target file
 func (m *Merger) Merge(sources []string, target string) error {
-	// 如果没有设置日志记录器，创建一个默认的
+	// If no logger is provided, create a default one
 	if m.Logger == nil {
 		if m.Verbose {
 			m.Logger = log.New(os.Stdout, "[MERGER] ", log.LstdFlags)
@@ -45,35 +45,35 @@ func (m *Merger) Merge(sources []string, target string) error {
 	m.Logger.Printf("Merging %d files into: %s", len(sources), target)
 	var mergedContent strings.Builder
 
-	// 初始化源目录列表
+	// Initialize source directory list
 	m.SourceDirs = make([]string, 0, len(sources))
-	sourceDirsMap := make(map[string]bool) // 用于去重
+	sourceDirsMap := make(map[string]bool) // Used for deduplication
 
-	// 处理每个源文件
+	// Process each source file
 	for i, source := range sources {
 		m.Logger.Printf("Processing file %d/%d: %s", i+1, len(sources), source)
 
-		// 获取源文件所在目录并添加到列表中（去重）
+		// Get source file's directory and add to list (deduplication)
 		sourceDir := filepath.Dir(source)
 		if !sourceDirsMap[sourceDir] {
 			sourceDirsMap[sourceDir] = true
 			m.SourceDirs = append(m.SourceDirs, sourceDir)
 		}
 
-		// 读取文件内容
+		// Read file content
 		content, err := os.ReadFile(source)
 		if err != nil {
 			m.Logger.Printf("Error reading file %s: %s", source, err)
 			return fmt.Errorf("failed to read file %s: %s", source, err)
 		}
 
-		// 处理内容
+		// Process content
 		processedContent := string(content)
 
-		// 确保内容是有效的 UTF-8
+		// Ensure content is valid UTF-8
 		if !utf8.ValidString(processedContent) {
 			m.Logger.Printf("File %s contains invalid UTF-8, attempting to convert from GBK", source)
-			// 尝试将内容从 GBK 转换为 UTF-8
+			// Attempt to convert content from GBK to UTF-8
 			reader := transform.NewReader(bytes.NewReader(content), simplifiedchinese.GBK.NewDecoder())
 			decodedContent, err := io.ReadAll(reader)
 			if err != nil {
@@ -84,11 +84,11 @@ func (m *Merger) Merge(sources []string, target string) error {
 			m.Logger.Printf("Successfully converted content from GBK to UTF-8")
 		}
 
-		// 移除 YAML front matter
+		// Remove YAML front matter
 		m.Logger.Println("Removing YAML front matter...")
 		processedContent = removeYAMLFrontMatter(processedContent)
 
-		// 处理图片路径
+		// Process image paths
 		m.Logger.Println("Processing image paths...")
 		processedContent, err = processImagePaths(processedContent, source, m.Logger, m.Verbose)
 		if err != nil {
@@ -96,37 +96,37 @@ func (m *Merger) Merge(sources []string, target string) error {
 			return fmt.Errorf("failed to process image paths: %s", err)
 		}
 
-		// 调整标题级别
+		// Adjust heading levels
 		if m.ShiftHeadingLevelBy != 0 {
 			m.Logger.Printf("Shifting heading levels by %d", m.ShiftHeadingLevelBy)
 			processedContent = ShiftHeadings(processedContent, m.ShiftHeadingLevelBy)
 		}
 
-		// 添加文件名作为标题
+		// Add filename as title
 		if m.FileAsTitle {
 			filename := filepath.Base(source)
 			m.Logger.Printf("Adding filename as title: %s", filename)
 			processedContent = AddTitleFromFilename(processedContent, filename, 1+m.ShiftHeadingLevelBy)
 		}
 
-		// 添加到合并内容
+		// Add to merged content
 		m.Logger.Printf("Adding processed content to merged result (length: %d bytes)", len(processedContent))
 		mergedContent.WriteString(processedContent)
 
-		// 如果不是最后一个文件，添加分隔符
+		// If not the last file, add separator
 		if i < len(sources)-1 {
 			mergedContent.WriteString("\n\n")
 		}
 	}
 
-	// 最终内容
+	// Final content
 	finalContent := mergedContent.String()
 
-	// 再次检查是否有任何 YAML 相关的问题
+	// Check again for any YAML-related issues
 	m.Logger.Println("Sanitizing final content...")
 	finalContent = sanitizeContent(finalContent)
 
-	// 写入目标文件，确保使用 UTF-8 编码
+	// Write target file, ensuring UTF-8 encoding
 	m.Logger.Printf("Writing merged content to target file: %s (size: %d bytes)", target, len(finalContent))
 	err := os.WriteFile(target, []byte(finalContent), 0644)
 	if err != nil {
@@ -138,9 +138,9 @@ func (m *Merger) Merge(sources []string, target string) error {
 	return nil
 }
 
-// processImagePaths 处理 Markdown 中的图片路径，将相对路径转换为相对于执行命令位置的路径
+// processImagePaths Process image paths in Markdown, converting relative paths to paths relative to the command execution location
 func processImagePaths(content, sourcePath string, logger *log.Logger, verbose bool) (string, error) {
-	// 如果没有设置日志记录器，创建一个默认的
+	// If no logger is provided, create a default one
 	if logger == nil {
 		if verbose {
 			logger = log.New(os.Stdout, "[IMAGE] ", log.LstdFlags)
@@ -149,112 +149,112 @@ func processImagePaths(content, sourcePath string, logger *log.Logger, verbose b
 		}
 	}
 
-	// 获取源文件所在目录
+	// Get source file's directory
 	sourceDir := filepath.Dir(sourcePath)
 	if verbose {
-		logger.Printf("处理图片路径: 源文件目录 = %s", sourceDir)
+		logger.Printf("Processing image paths: source file directory = %s", sourceDir)
 	}
 
-	// 获取当前工作目录（执行命令的位置）
+	// Get current working directory (location of command execution)
 	workingDir, err := os.Getwd()
 	if err != nil {
-		return "", fmt.Errorf("无法获取当前工作目录: %v", err)
+		return "", fmt.Errorf("unable to get current working directory: %v", err)
 	}
 	if verbose {
-		logger.Printf("当前工作目录 = %s", workingDir)
+		logger.Printf("Current working directory = %s", workingDir)
 	}
 
-	// 获取源文件目录的绝对路径
+	// Get absolute path of source file's directory
 	absSourceDir, err := filepath.Abs(sourceDir)
 	if err != nil {
-		return "", fmt.Errorf("无法获取源文件目录的绝对路径: %v", err)
+		return "", fmt.Errorf("unable to get absolute path of source file's directory: %v", err)
 	}
 	if verbose {
-		logger.Printf("源文件目录的绝对路径 = %s", absSourceDir)
+		logger.Printf("Source file's directory absolute path = %s", absSourceDir)
 	}
 
-	// 匹配 Markdown 图片语法: ![alt](path)
+	// Match Markdown image syntax: ![alt](path)
 	imageRegex := regexp.MustCompile(`!\[(.*?)\]\((.*?)\)`)
 
-	// 替换所有图片路径
+	// Replace all image paths
 	processedContent := imageRegex.ReplaceAllStringFunc(content, func(match string) string {
-		// 提取图片路径
+		// Extract image path
 		submatches := imageRegex.FindStringSubmatch(match)
 		if len(submatches) < 3 {
-			return match // 如果匹配不正确，保持原样
+			return match // If match is incorrect, keep as-is
 		}
 
 		altText := submatches[1]
 		imagePath := submatches[2]
 		if verbose {
-			logger.Printf("找到图片: alt = %s, 路径 = %s", altText, imagePath)
+			logger.Printf("Found image: alt = %s, path = %s", altText, imagePath)
 		}
 
-		// 如果是网络图片（以 http:// 或 https:// 开头），保持原样
+		// If image is a web image (starts with http:// or https://), keep as-is
 		if strings.HasPrefix(imagePath, "http://") || strings.HasPrefix(imagePath, "https://") {
 			if verbose {
-				logger.Printf("保留网络图片路径: %s", imagePath)
+				logger.Printf("Keeping web image path: %s", imagePath)
 			}
 			return match
 		}
 
-		// 解析图片的绝对路径
+		// Parse image's absolute path
 		var absoluteImagePath string
 		if filepath.IsAbs(imagePath) {
 			absoluteImagePath = imagePath
 		} else {
-			// 对于相对路径，先转换为绝对路径
+			// For relative paths, convert to absolute path first
 			absoluteImagePath = filepath.Join(absSourceDir, imagePath)
 		}
 		if verbose {
-			logger.Printf("解析图片路径: 相对路径 = %s, 绝对路径 = %s", imagePath, absoluteImagePath)
+			logger.Printf("Image path: relative path = %s, absolute path = %s", imagePath, absoluteImagePath)
 		}
 
-		// 检查图片文件是否存在
+		// Check if image file exists
 		if _, err := os.Stat(absoluteImagePath); os.IsNotExist(err) {
 			if verbose {
-				logger.Printf("图片不存在: %s", absoluteImagePath)
+				logger.Printf("Image does not exist: %s", absoluteImagePath)
 			}
-			// 图片不存在，尝试在相邻目录查找
-			// 例如，如果路径是 ../images/image.png，尝试在源文件目录的上一级目录的 images 子目录中查找
+			// Image does not exist, try to find it in adjacent directories
+			// For example, if path is ../images/image.png, try to find it in the images subdirectory of the parent directory of the source file's directory
 			if strings.HasPrefix(imagePath, "../") {
 				parentDir := filepath.Dir(absSourceDir)
 				relPath := strings.TrimPrefix(imagePath, "../")
 				alternativePath := filepath.Join(parentDir, relPath)
 				if verbose {
-					logger.Printf("尝试替代路径: %s", alternativePath)
+					logger.Printf("Trying alternative path: %s", alternativePath)
 				}
 				if _, err := os.Stat(alternativePath); err == nil {
 					absoluteImagePath = alternativePath
 					if verbose {
-						logger.Printf("找到图片在替代路径: %s", absoluteImagePath)
+						logger.Printf("Found image in alternative path: %s", absoluteImagePath)
 					}
 				} else {
-					// 仍然找不到，保持原样
+					// Still not found, keep as-is
 					if verbose {
-						logger.Printf("图片在替代路径也不存在: %s", alternativePath)
+						logger.Printf("Image does not exist in alternative path: %s", alternativePath)
 					}
 					return match
 				}
 			} else {
-				// 找不到图片，保持原样
+				// Image not found, keep as-is
 				return match
 			}
 		}
 
-		// 计算图片相对于当前工作目录的路径
+		// Calculate image's path relative to current working directory
 		relPath, err := filepath.Rel(workingDir, absoluteImagePath)
 		if err != nil {
 			if verbose {
-				logger.Printf("无法计算相对路径，保留原始路径: %s, 错误: %v", imagePath, err)
+				logger.Printf("Unable to calculate relative path, keeping original path: %s, error: %v", imagePath, err)
 			}
 			return match
 		}
 
-		// 使用相对于当前工作目录的路径更新图片引用
+		// Update image reference with path relative to current working directory
 		newRef := fmt.Sprintf("![%s](%s)", altText, relPath)
 		if verbose {
-			logger.Printf("更新图片引用: %s -> %s", match, newRef)
+			logger.Printf("Updating image reference: %s -> %s", match, newRef)
 		}
 		return newRef
 	})
@@ -262,29 +262,29 @@ func processImagePaths(content, sourcePath string, logger *log.Logger, verbose b
 	return processedContent, nil
 }
 
-// removeYAMLFrontMatter 移除 YAML front matter
+// removeYAMLFrontMatter Remove YAML front matter
 func removeYAMLFrontMatter(content string) string {
-	// 匹配 YAML front matter
+	// Match YAML front matter
 	yamlFrontMatterRegex := regexp.MustCompile(`(?s)^---\s*\n(.*?)\n---\s*\n`)
 	return yamlFrontMatterRegex.ReplaceAllString(content, "")
 }
 
-// sanitizeContent 清理内容，移除可能导致 Pandoc 解析错误的内容
+// sanitizeContent Clean content, removing content that may cause Pandoc parsing errors
 func sanitizeContent(content string) string {
-	// 移除可能导致 YAML 解析错误的行
+	// Remove lines that may cause YAML parsing errors
 	lines := strings.Split(content, "\n")
 	var cleanedLines []string
 
 	for _, line := range lines {
-		// 跳过可能导致 YAML 解析错误的行
+		// Skip lines that may cause YAML parsing errors
 		if strings.Contains(line, ":") && !strings.Contains(line, ": ") && !strings.HasPrefix(line, "    ") && !strings.HasPrefix(line, "\t") {
-			// 这种情况下冒号后面应该有空格，但没有，可能会导致 YAML 解析错误
-			// 尝试修复它
+			// In this case, there should be a space after the colon, but there isn't, which may cause YAML parsing errors
+			// Try to fix it
 			fixedLine := strings.Replace(line, ":", ": ", 1)
 			cleanedLines = append(cleanedLines, fixedLine)
 		} else if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "- ") && len(line) > 1 {
-			// 这种情况下破折号后面应该有空格，但没有，可能会导致 YAML 解析错误
-			// 尝试修复它
+			// In this case, there should be a space after the dash, but there isn't, which may cause YAML parsing errors
+			// Try to fix it
 			fixedLine := strings.Replace(line, "-", "- ", 1)
 			cleanedLines = append(cleanedLines, fixedLine)
 		} else {

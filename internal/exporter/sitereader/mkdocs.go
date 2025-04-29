@@ -12,29 +12,26 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// MkDocsReader 实现 MkDocs 站点的读取
 type MkDocsReader struct {
 	Logger *log.Logger
 }
 
-// MkDocsConfig 表示 MkDocs 配置文件结构
 type MkDocsConfig struct {
 	Docs    []string `yaml:"nav"`
 	DocsDir string   `yaml:"docs_dir"`
 	Inherit string   `yaml:"INHERIT"`
 }
 
-// Detect 检测给定目录是否为 MkDocs 站点
 func (r *MkDocsReader) Detect(dir string) bool {
-	// 设置日志记录器
+	// Setting up the Logger
 	if r.Logger == nil {
 		r.Logger = log.New(io.Discard, "", 0)
 	}
 
-	// 检查是否存在 mkdocs.yml 文件
+	// Check if mkdocs.yml file exists
 	mkdocsPath := filepath.Join(dir, "mkdocs.yml")
 	if _, err := os.Stat(mkdocsPath); os.IsNotExist(err) {
-		// 尝试 mkdocs.yaml
+		// Try mkdocs.yaml
 		mkdocsPath = filepath.Join(dir, "mkdocs.yaml")
 		if _, err := os.Stat(mkdocsPath); os.IsNotExist(err) {
 			r.Logger.Printf("No mkdocs.yml or mkdocs.yaml found in %s", dir)
@@ -46,9 +43,8 @@ func (r *MkDocsReader) Detect(dir string) bool {
 	return true
 }
 
-// ReadStructure 读取 MkDocs 站点结构
 func (r *MkDocsReader) ReadStructure(dir string, configPath string, navPath string) ([]string, error) {
-	// 设置日志记录器
+	// Setting up the Logger
 	if r.Logger == nil {
 		r.Logger = log.New(io.Discard, "", 0)
 	}
@@ -58,7 +54,7 @@ func (r *MkDocsReader) ReadStructure(dir string, configPath string, navPath stri
 		r.Logger.Printf("Filtering by navigation path: %s", navPath)
 	}
 
-	// 查找配置文件
+	// Find config file
 	if configPath == "" {
 		configNames := []string{"mkdocs.yml", "mkdocs.yaml"}
 		var err error
@@ -70,14 +66,14 @@ func (r *MkDocsReader) ReadStructure(dir string, configPath string, navPath stri
 	}
 	r.Logger.Printf("Using config file: %s", configPath)
 
-	// 读取并解析配置文件，包括处理 INHERIT
+	// Read and parse config file, including handling INHERIT
 	config, err := r.readAndMergeConfig(configPath, dir)
 	if err != nil {
 		r.Logger.Printf("Failed to read config file: %s", err)
 		return nil, fmt.Errorf("failed to read config file: %s", err)
 	}
 
-	// 获取文档目录
+	// Get docs directory
 	docsDir := "docs"
 	if docsDirValue, ok := config["docs_dir"]; ok {
 		if docsDirStr, ok := docsDirValue.(string); ok {
@@ -87,17 +83,17 @@ func (r *MkDocsReader) ReadStructure(dir string, configPath string, navPath stri
 	docsDir = filepath.Join(dir, docsDir)
 	r.Logger.Printf("Using docs directory: %s", docsDir)
 
-	// 解析导航结构
+	// Parse navigation structure
 	var nav interface{}
 	if navValue, ok := config["nav"]; ok {
 		nav = navValue
 	} else {
-		// 如果没有导航配置，尝试查找所有 Markdown 文件
+		// If no navigation config, try to find all Markdown files
 		r.Logger.Println("No navigation configuration found, searching for all markdown files")
 		return getAllMarkdownFiles(docsDir)
 	}
 
-	// 解析导航结构，获取文件列表
+	// Parse navigation structure, get file list
 	files, err := parseNavigation(nav, docsDir, navPath)
 	if err != nil {
 		r.Logger.Printf("Failed to parse navigation: %s", err)
@@ -108,32 +104,32 @@ func (r *MkDocsReader) ReadStructure(dir string, configPath string, navPath stri
 	return files, nil
 }
 
-// readAndMergeConfig 读取并合并 MkDocs 配置文件，处理 INHERIT 指令
+// readAndMergeConfig Read and merge MkDocs config file, handling INHERIT directive
 func (r *MkDocsReader) readAndMergeConfig(configPath string, baseDir string) (map[string]interface{}, error) {
 	r.Logger.Printf("Reading and merging config file: %s", configPath)
 
-	// 读取主配置文件
+	// Read main config file
 	configData, err := os.ReadFile(configPath)
 	if err != nil {
 		r.Logger.Printf("Failed to read MkDocs config file: %s", err)
 		return nil, fmt.Errorf("failed to read MkDocs config file: %s", err)
 	}
 
-	// 解析配置文件
+	// Parse config file
 	var config map[string]interface{}
 	if err := yaml.Unmarshal(configData, &config); err != nil {
 		r.Logger.Printf("Failed to parse MkDocs config file: %s", err)
 		return nil, fmt.Errorf("failed to parse MkDocs config file: %s", err)
 	}
 
-	// 检查是否有 INHERIT 指令
+	// Check if there's an INHERIT directive
 	inheritValue, hasInherit := config["INHERIT"]
 	if !hasInherit {
-		// 没有继承，直接返回当前配置
+		// No inherit, return current config
 		return config, nil
 	}
 
-	// 处理 INHERIT 指令
+	// Handle INHERIT directive
 	inheritPath, ok := inheritValue.(string)
 	if !ok {
 		r.Logger.Printf("Invalid INHERIT value, expected string but got: %T", inheritValue)
@@ -142,27 +138,27 @@ func (r *MkDocsReader) readAndMergeConfig(configPath string, baseDir string) (ma
 
 	r.Logger.Printf("Found INHERIT directive pointing to: %s", inheritPath)
 
-	// 解析继承路径，可能是相对于当前配置文件的路径
+	// Parse inherit path, may be relative to current config file
 	configDir := filepath.Dir(configPath)
 	inheritFullPath := filepath.Join(configDir, inheritPath)
 
-	// 读取继承的配置文件
+	// Read inherited config file
 	inheritConfig, err := r.readAndMergeConfig(inheritFullPath, baseDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read inherited config file %s: %s", inheritFullPath, err)
 	}
 
-	// 合并配置，当前配置优先
+	// Merge config, current config takes precedence
 	mergedConfig := make(map[string]interface{})
 
-	// 先复制继承的配置
+	// Copy inherit config first
 	for k, v := range inheritConfig {
 		mergedConfig[k] = v
 	}
 
-	// 再覆盖当前配置
+	// Override current config
 	for k, v := range config {
-		if k != "INHERIT" { // 不复制 INHERIT 指令
+		if k != "INHERIT" { // Don't copy INHERIT directive
 			mergedConfig[k] = v
 		}
 	}
@@ -171,21 +167,21 @@ func (r *MkDocsReader) readAndMergeConfig(configPath string, baseDir string) (ma
 	return mergedConfig, nil
 }
 
-// preprocessMarkdownFile 预处理 Markdown 文件，移除可能导致问题的 YAML front matter
+// preprocessMarkdownFile Preprocess Markdown file, remove YAML front matter that may cause problems
 func preprocessMarkdownFile(filePath string) error {
-	// 读取文件内容
+	// Read file content
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
 
-	// 检查是否有 YAML front matter
+	// Check if there's YAML front matter
 	contentStr := string(content)
 	yamlFrontMatterRegex := regexp.MustCompile(`(?s)^---\s*\n(.*?)\n---\s*\n`)
 
-	// 如果有 YAML front matter，移除它
+	// If there's YAML front matter, remove it
 	if yamlFrontMatterRegex.MatchString(contentStr) {
-		// 创建临时文件
+		// Create temp file
 		tempFile, err := os.CreateTemp("", "mdctl-*.md")
 		if err != nil {
 			return err
@@ -193,16 +189,16 @@ func preprocessMarkdownFile(filePath string) error {
 		tempFilePath := tempFile.Name()
 		tempFile.Close()
 
-		// 移除 YAML front matter
+		// Remove YAML front matter
 		processedContent := yamlFrontMatterRegex.ReplaceAllString(contentStr, "")
 
-		// 写入处理后的内容到临时文件
+		// Write processed content to temp file
 		if err := os.WriteFile(tempFilePath, []byte(processedContent), 0644); err != nil {
 			os.Remove(tempFilePath)
 			return err
 		}
 
-		// 替换原始文件
+		// Replace original file
 		if err := os.Rename(tempFilePath, filePath); err != nil {
 			os.Remove(tempFilePath)
 			return err
@@ -212,13 +208,13 @@ func preprocessMarkdownFile(filePath string) error {
 	return nil
 }
 
-// parseNavigation 解析 MkDocs 导航结构
+// parseNavigation Parse MkDocs navigation structure
 func parseNavigation(nav interface{}, docsDir string, navPath string) ([]string, error) {
 	var files []string
 
 	switch v := nav.(type) {
 	case []interface{}:
-		// 导航是一个列表
+		// Navigation is a list
 		for _, item := range v {
 			itemFiles, err := parseNavigation(item, docsDir, navPath)
 			if err != nil {
@@ -227,14 +223,14 @@ func parseNavigation(nav interface{}, docsDir string, navPath string) ([]string,
 			files = append(files, itemFiles...)
 		}
 	case map[string]interface{}:
-		// 导航是一个映射
+		// Navigation is a map
 		for title, value := range v {
-			// 如果指定了导航路径，检查当前节点标题是否匹配
+			// If nav path is specified, check if current node title matches
 			if navPath != "" {
-				// 支持简单的路径匹配，例如 "Section1/Subsection2"
+				// Support simple path matching, e.g. "Section1/Subsection2"
 				navParts := strings.Split(navPath, "/")
 				if strings.TrimSpace(title) == strings.TrimSpace(navParts[0]) {
-					// 如果是多级路径，继续匹配下一级
+					// If it's a multi-level path, continue matching the next level
 					if len(navParts) > 1 {
 						subNavPath := strings.Join(navParts[1:], "/")
 						itemFiles, err := parseNavigation(value, docsDir, subNavPath)
@@ -244,7 +240,7 @@ func parseNavigation(nav interface{}, docsDir string, navPath string) ([]string,
 						files = append(files, itemFiles...)
 						continue
 					} else {
-						// 如果是单级路径且匹配，只处理这个节点
+						// If it's a single-level path and matches, only handle this node
 						itemFiles, err := parseNavigation(value, docsDir, "")
 						if err != nil {
 							return nil, err
@@ -253,12 +249,12 @@ func parseNavigation(nav interface{}, docsDir string, navPath string) ([]string,
 						continue
 					}
 				} else {
-					// 标题不匹配，跳过这个节点
+					// Title doesn't match, skip this node
 					continue
 				}
 			}
 
-			// 如果没有指定导航路径或已经匹配到了路径，正常处理
+			// If no nav path is specified or already matched the path, handle normally
 			itemFiles, err := parseNavigation(value, docsDir, "")
 			if err != nil {
 				return nil, err
@@ -266,11 +262,11 @@ func parseNavigation(nav interface{}, docsDir string, navPath string) ([]string,
 			files = append(files, itemFiles...)
 		}
 	case string:
-		// 导航项是一个文件路径
+		// Navigation item is a file path
 		if strings.HasSuffix(v, ".md") {
 			filePath := filepath.Join(docsDir, v)
 			if _, err := os.Stat(filePath); err == nil {
-				// 如果没有指定导航路径或已经在导航路径过滤中处理过，添加文件
+				// If no nav path is specified or already handled in nav path filtering, add file
 				if navPath == "" {
 					files = append(files, filePath)
 				}
@@ -281,7 +277,7 @@ func parseNavigation(nav interface{}, docsDir string, navPath string) ([]string,
 	return files, nil
 }
 
-// getAllMarkdownFiles 获取目录中的所有 Markdown 文件
+// getAllMarkdownFiles Get all Markdown files in a directory
 func getAllMarkdownFiles(dir string) ([]string, error) {
 	var files []string
 

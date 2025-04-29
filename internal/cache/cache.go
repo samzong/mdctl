@@ -80,7 +80,7 @@ func (c *Cache) Load() error {
 	if _, err := os.Stat(cacheFile); os.IsNotExist(err) {
 		// Cache file doesn't exist yet, create a new one
 		c.Items = make(map[string]CacheItem)
-		return c.saveWithoutLock() // 使用无锁版本，避免死锁
+		return c.saveWithoutLock()
 	}
 
 	data, err := os.ReadFile(cacheFile)

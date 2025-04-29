@@ -11,7 +11,7 @@ import (
 	"github.com/gobwas/glob"
 )
 
-// Sitemap XML结构
+// Sitemap XML structure
 type Sitemap struct {
 	XMLName xml.Name `xml:"urlset"`
 	URLs    []struct {
@@ -22,7 +22,7 @@ type Sitemap struct {
 	} `xml:"url"`
 }
 
-// SitemapIndex XML结构
+// SitemapIndex XML structure
 type SitemapIndex struct {
 	XMLName  xml.Name `xml:"sitemapindex"`
 	Sitemaps []struct {
@@ -31,25 +31,25 @@ type SitemapIndex struct {
 	} `xml:"sitemap"`
 }
 
-// 解析sitemap.xml文件并返回所有URL
+// Parse sitemap.xml file and return all URLs
 func (g *Generator) parseSitemap() ([]string, error) {
 	g.logger.Printf("Parsing sitemap from %s", g.config.SitemapURL)
 
-	// 设置HTTP客户端
+	// Set HTTP client
 	client := &http.Client{
 		Timeout: time.Duration(g.config.Timeout) * time.Second,
 	}
 
-	// 构建请求
+	// Build request
 	req, err := http.NewRequest("GET", g.config.SitemapURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// 设置User-Agent
+	// Set User-Agent
 	req.Header.Set("User-Agent", g.config.UserAgent)
 
-	// 发送请求
+	// Send request
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch sitemap: %w", err)
@@ -60,27 +60,27 @@ func (g *Generator) parseSitemap() ([]string, error) {
 		return nil, fmt.Errorf("failed to fetch sitemap, status code: %d", resp.StatusCode)
 	}
 
-	// 读取响应体
+	// Read response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read sitemap content: %w", err)
 	}
 
-	// 尝试解析为标准sitemap
+	// Try to parse as standard sitemap
 	var sitemap Sitemap
 	if err := xml.Unmarshal(body, &sitemap); err == nil && len(sitemap.URLs) > 0 {
 		g.logger.Println("Parsed standard sitemap")
 		return g.extractURLsFromSitemap(sitemap), nil
 	}
 
-	// 尝试解析为sitemap索引
+	// Try to parse as sitemap index
 	var sitemapIndex SitemapIndex
 	if err := xml.Unmarshal(body, &sitemapIndex); err == nil && len(sitemapIndex.Sitemaps) > 0 {
 		g.logger.Println("Parsed sitemap index, fetching child sitemaps")
 		return g.fetchSitemapIndex(sitemapIndex, client)
 	}
 
-	// 如果都解析失败，尝试按文本格式处理（一行一个URL）
+	// If all parsing fails, try to handle as text sitemap (one URL per line)
 	lines := string(body)
 	if len(lines) > 0 {
 		g.logger.Println("Parsing as text sitemap")
@@ -90,7 +90,7 @@ func (g *Generator) parseSitemap() ([]string, error) {
 	return nil, fmt.Errorf("could not parse sitemap, unknown format")
 }
 
-// 从标准sitemap提取URL
+// Extract URLs from standard sitemap
 func (g *Generator) extractURLsFromSitemap(sitemap Sitemap) []string {
 	urls := make([]string, 0, len(sitemap.URLs))
 	for _, urlEntry := range sitemap.URLs {
@@ -101,7 +101,7 @@ func (g *Generator) extractURLsFromSitemap(sitemap Sitemap) []string {
 	return urls
 }
 
-// 从sitemap索引获取所有子sitemap的URL
+// Get all child sitemap URLs from sitemap index
 func (g *Generator) fetchSitemapIndex(index SitemapIndex, client *http.Client) ([]string, error) {
 	var allURLs []string
 
@@ -112,24 +112,24 @@ func (g *Generator) fetchSitemapIndex(index SitemapIndex, client *http.Client) (
 
 		g.logger.Printf("Fetching child sitemap: %s", sitemapEntry.Loc)
 
-		// 构建请求
+		// Build request
 		req, err := http.NewRequest("GET", sitemapEntry.Loc, nil)
 		if err != nil {
 			g.logger.Printf("Warning: failed to create request for child sitemap %s: %v", sitemapEntry.Loc, err)
 			continue
 		}
 
-		// 设置User-Agent
+		// Set User-Agent
 		req.Header.Set("User-Agent", g.config.UserAgent)
 
-		// 发送请求
+		// Send request
 		resp, err := client.Do(req)
 		if err != nil {
 			g.logger.Printf("Warning: failed to fetch child sitemap %s: %v", sitemapEntry.Loc, err)
 			continue
 		}
 
-		// 读取响应体
+		// Read response body
 		body, err := io.ReadAll(resp.Body)
 		resp.Body.Close()
 		if err != nil {
@@ -137,14 +137,14 @@ func (g *Generator) fetchSitemapIndex(index SitemapIndex, client *http.Client) (
 			continue
 		}
 
-		// 解析子sitemap
+		// Parse child sitemap
 		var childSitemap Sitemap
 		if err := xml.Unmarshal(body, &childSitemap); err != nil {
 			g.logger.Printf("Warning: failed to parse child sitemap %s: %v", sitemapEntry.Loc, err)
 			continue
 		}
 
-		// 提取URL
+		// Extract URLs
 		childURLs := g.extractURLsFromSitemap(childSitemap)
 		g.logger.Printf("Found %d URLs in child sitemap %s", len(childURLs), sitemapEntry.Loc)
 		allURLs = append(allURLs, childURLs...)
@@ -153,7 +153,7 @@ func (g *Generator) fetchSitemapIndex(index SitemapIndex, client *http.Client) (
 	return allURLs, nil
 }
 
-// 解析文本格式的sitemap（一行一个URL）
+// Parse text sitemap (one URL per line)
 func (g *Generator) parseTextSitemap(content string) []string {
 	lines := splitLines(content)
 	var urls []string
@@ -168,13 +168,13 @@ func (g *Generator) parseTextSitemap(content string) []string {
 	return urls
 }
 
-// 基于include/exclude模式过滤URL列表
+// Filter URLs based on include/exclude mode
 func (g *Generator) filterURLs(urls []string) []string {
 	if len(g.config.IncludePaths) == 0 && len(g.config.ExcludePaths) == 0 {
-		return urls // 没有过滤规则，直接返回
+		return urls // No filtering rules, return directly
 	}
 
-	// 编译include/exclude模式
+	// Compile include/exclude mode
 	var includeMatchers, excludeMatchers []glob.Glob
 	for _, pattern := range g.config.IncludePaths {
 		matcher, err := glob.Compile(pattern)
@@ -196,7 +196,7 @@ func (g *Generator) filterURLs(urls []string) []string {
 
 	var filteredURLs []string
 	for _, url := range urls {
-		// 如果有include规则，必须匹配其中一个
+		// If there are include rules, one of them must match
 		if len(includeMatchers) > 0 {
 			matched := false
 			for _, matcher := range includeMatchers {
@@ -210,7 +210,7 @@ func (g *Generator) filterURLs(urls []string) []string {
 			}
 		}
 
-		// 如果匹配任何exclude规则，则排除
+		// If any exclude rules match, exclude
 		excluded := false
 		for _, matcher := range excludeMatchers {
 			if matcher.Match(url) {
@@ -228,17 +228,17 @@ func (g *Generator) filterURLs(urls []string) []string {
 	return filteredURLs
 }
 
-// 辅助函数：按行分割文本
+// Helper function: split text by line
 func splitLines(s string) []string {
 	return strings.Split(s, "\n")
 }
 
-// 辅助函数：标准化URL（去除空格等）
+// Helper function: normalize URL (remove spaces, etc.)
 func normalizeURL(url string) string {
 	return url
 }
 
-// 辅助函数：检查URL是否有效
+// Helper function: check if URL is valid
 func isValidURL(url string) bool {
 	return url != ""
 }

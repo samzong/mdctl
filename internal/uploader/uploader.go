@@ -359,7 +359,6 @@ func (u *Uploader) processFile(filePath string) error {
 		}
 	}
 
-	// 仅处理来自缓存的链接更新，非缓存的会在所有上传完成后处理
 	if contentChanged && !u.Config.DryRun {
 		if err := os.WriteFile(filePath, []byte(newContent), 0644); err != nil {
 			return fmt.Errorf("failed to write file %s: %v", filePath, err)

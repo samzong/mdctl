@@ -103,15 +103,15 @@ func LoadConfig() (*Config, error) {
 		config.ModelName = DefaultConfig.ModelName
 	}
 
-	// 确保CloudStorages为非nil
+	// Ensure CloudStorages is non-nil
 	if config.CloudStorages == nil {
 		config.CloudStorages = make(map[string]CloudConfig)
 	}
 
-	// 检查默认存储是否存在
+	// Check if default storage exists
 	if config.DefaultStorage != "" {
 		if _, exists := config.CloudStorages[config.DefaultStorage]; !exists {
-			// 如果指定的默认存储不存在，使用第一个可用的
+			// If specified default storage doesn't exist, use the first available one
 			if len(config.CloudStorages) > 0 {
 				for name := range config.CloudStorages {
 					config.DefaultStorage = name
@@ -122,7 +122,7 @@ func LoadConfig() (*Config, error) {
 			}
 		}
 	} else if len(config.CloudStorages) > 0 {
-		// 如果没有设置默认存储但有存储配置，设置第一个为默认
+		// If no default storage is set but there are storage configurations, set the first one as default
 		for name := range config.CloudStorages {
 			config.DefaultStorage = name
 			break

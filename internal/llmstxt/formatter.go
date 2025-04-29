@@ -5,42 +5,42 @@ import (
 	"unicode"
 )
 
-// 格式化为Markdown内容
+// Format to Markdown content
 func (g *Generator) formatContent(sections map[string][]PageInfo) string {
 	var buf strings.Builder
 
-	// 获取排序后的章节列表
+	// Get sorted section list
 	sectionNames := g.getSortedSections(sections)
 
-	// 找到根页面信息
+	// Find root page info
 	var rootPage PageInfo
 	if rootPages, ok := sections["ROOT"]; ok && len(rootPages) > 0 {
 		rootPage = rootPages[0]
 	}
 
-	// 添加文档标题
+	// Add document title
 	buf.WriteString("# ")
 	buf.WriteString(rootPage.Title)
 	buf.WriteString("\n\n")
 
-	// 添加文档描述
+	// Add document description
 	buf.WriteString("> ")
 	buf.WriteString(rootPage.Description)
 	buf.WriteString("\n\n")
 
-	// 处理每个章节
+	// Handle each section
 	for _, section := range sectionNames {
-		// 跳过ROOT章节，因为它已经用于标题和描述
+		// Skip ROOT section, because it's already used for title and description
 		if section == "ROOT" {
 			continue
 		}
 
-		// 添加章节标题
+		// Add section title
 		buf.WriteString("## ")
 		buf.WriteString(capitalizeString(section))
 		buf.WriteString("\n\n")
 
-		// 添加章节内每个页面的信息
+		// Add page info for each page in section
 		for _, page := range sections[section] {
 			buf.WriteString("- [")
 			buf.WriteString(page.Title)
@@ -50,7 +50,7 @@ func (g *Generator) formatContent(sections map[string][]PageInfo) string {
 			buf.WriteString(page.Description)
 			buf.WriteString("\n")
 
-			// 在全文模式下添加页面正文内容
+			// Add page content in full mode
 			if g.config.FullMode && page.Content != "" {
 				buf.WriteString("\n")
 				buf.WriteString(page.Content)
@@ -64,7 +64,7 @@ func (g *Generator) formatContent(sections map[string][]PageInfo) string {
 	return buf.String()
 }
 
-// 首字母大写，其余小写
+// Capitalize first letter, lowercase the rest
 func capitalizeString(str string) string {
 	if str == "" {
 		return ""

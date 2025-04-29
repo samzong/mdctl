@@ -8,19 +8,19 @@ import (
 	"path/filepath"
 )
 
-// SiteReader 定义站点读取器接口
+// SiteReader Define Site Reader Interface
 type SiteReader interface {
-	// 检测给定目录是否为此类型的站点
+	// Detect if given directory is this type of site
 	Detect(dir string) bool
 
-	// 读取站点结构，返回按顺序排列的文件列表
-	// navPath 参数用于指定要导出的导航路径，为空时导出全部
+	// Read site structure, return sorted list of files
+	// navPath parameter is used to specify the navigation path to export, empty to export all
 	ReadStructure(dir string, configPath string, navPath string) ([]string, error)
 }
 
-// GetSiteReader 根据站点类型返回相应的读取器
+// GetSiteReader Return the appropriate reader based on site type
 func GetSiteReader(siteType string, verbose bool, logger *log.Logger) (SiteReader, error) {
-	// 如果没有提供日志记录器，创建一个默认的
+	// If no logger is provided, create a default one
 	if logger == nil {
 		if verbose {
 			logger = log.New(os.Stdout, "[SITE-READER] ", log.LstdFlags)
@@ -47,14 +47,14 @@ func GetSiteReader(siteType string, verbose bool, logger *log.Logger) (SiteReade
 	}
 }
 
-// FindConfigFile 在给定目录中查找配置文件
+// FindConfigFile Find config file in given directory
 func FindConfigFile(dir string, configNames []string) (string, error) {
-	// 如果没有提供配置文件名，使用默认值
+	// If no config file name is provided, use default values
 	if len(configNames) == 0 {
 		configNames = []string{"config.yml", "config.yaml"}
 	}
 
-	// 查找配置文件
+	// Find config file
 	for _, name := range configNames {
 		configPath := filepath.Join(dir, name)
 		if _, err := os.Stat(configPath); err == nil {
