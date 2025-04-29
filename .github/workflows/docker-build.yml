@@ -1,0 +1,100 @@
+name: Docker Image Build
+
+on:
+  release:
+    types: [published, created]
+  push:
+    tags:
+      - 'v*'
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
+      - '!.github/workflows/docker-build.yml'
+  workflow_dispatch:
+
+jobs:
+  docker:
+    name: Build and Push Multi-arch Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/mdctl
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,format=short
+            type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
+
+      - name: Display tags
+        run: |
+          echo "Generated tags: ${{ steps.meta.outputs.tags }}"
+          echo "Ref type: ${{ github.ref_type }}"
+          echo "Ref: ${{ github.ref }}"
+
+      # Set explicit latest tag for tag events
+      - name: Set explicit latest tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: echo "EXTRA_TAGS=ghcr.io/${{ github.repository_owner }}/mdctl:latest" >> $GITHUB_ENV
+
+      # Get version information
+      - name: Get version info
+        id: version_info
+        run: |
+          # Get version from tag or git describe
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME}"
+          else
+            VERSION="$(git describe --tags --always || echo 'dev')"
+          fi
+
+          # Get build time
+          BUILD_TIME="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+          # Set outputs
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "BUILD_TIME=${BUILD_TIME}" >> $GITHUB_OUTPUT
+
+          # Display for debugging
+          echo "Version: ${VERSION}"
+          echo "Build time: ${BUILD_TIME}"
+
+      - name: Build and Push Multi-arch Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}${{ env.EXTRA_TAGS != '' && format(',{0}', env.EXTRA_TAGS) || '' }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.version_info.outputs.VERSION }}
+            BUILD_TIME=${{ steps.version_info.outputs.BUILD_TIME }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
