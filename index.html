@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>mdctl mdctl</title>
-    <meta name="description" content="A command-line tool for processing Markdown files. Currently, it supports automatically downloading remote images to loc">
+    <title>mdctl - A CLI Tool for Markdown File Operations mdctl</title>
+    <meta name="description" content="Use Homebrew to install mdctl. Follow the Homebrew Installation Guide to install Homebrew.">
     <meta name="keywords" content="Markdown processor,CLI tool,Image downloader,Markdown translator,AI translation,Markdown automation,Remote image handling,Markdown utilities,AI-powered Markdown,Markdown enhancement,Markdown file management">
     <link rel="stylesheet" type="text/css" href="css/main.css?v=1.34.1">
     <link rel="stylesheet" type="text/css" href="css/tocbot.css?v=1.34.1">
@@ -13,15 +13,13 @@
     <link rel="stylesheet" type="text/css" href="css/sidebar.css?v=1.34.1">
     <link rel="stylesheet" type="text/css" href="css/copy.css?v=1.34.1">
     <link rel="stylesheet" type="text/css" href="css/demo-preview.css?v=1.34.1">
-    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
     <script src="js/copy.js?v=1.34.1"></script>
     <script src="js/dark-mode.js?v=1.34.1"></script>
     <script src="js/markdown-style.js?v=1.34.1"></script>
   </head>
   <body id="idoctotop"><a href="#idoctotop" class="gototop">top</a>
     <header class="header">
-      <article class="inner warpper" style="max-width:720px;"><a class="logo" href="index.html"><img alt="mdctl logo" src="assets/icon.png">
-<span class="title">mdctl</span></a>
+      <article class="inner warpper" style="max-width:720px;"><a class="logo" href="index.html"><span class="title">mdctl</span></a>
         <div class="content">
           <ul class="menu">
             <li><a href="index.html" target="" class="active">Home</a></li>
@@ -35,9 +33,16 @@
     </header>
     <div style="max-width:720px;" class="warpper-content warpper notocs">
       <markdown-style theme-auto-switch-disabled="">
-        <p><a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a></p>
-        <h1 id="mdctl"><a aria-hidden="true" tabindex="-1" href="#mdctl" class="anchor"><span class="icon icon-link"></span></a>mdctl</h1>
-        <p>A command-line tool for processing Markdown files. Currently, it supports automatically downloading remote images to local storage and updating the image references in Markdown files, as well as translating markdown files using AI models.</p>
+        <h1 id="mdctl---a-cli-tool-for-markdown-file-operations"><a aria-hidden="true" tabindex="-1" href="#mdctl---a-cli-tool-for-markdown-file-operations" class="anchor"><span class="icon icon-link"></span></a>mdctl - A CLI Tool for Markdown File Operations</h1>
+        <div align="center">
+          <img src="mdctl.png" alt="mdctl logo" width="200"><br>
+          <p>An AI-powered CLI tool to enhance your Markdown workflow, with auto-image downloading, translation, and more features coming soon!</p>
+          <p>
+            <a href="https://github.com/samzong/mdctl/actions/workflows/docker-build.yml"><img src="https://github.com/samzong/mdctl/actions/workflows/docker-build.yml/badge.svg" alt="Build Status"></a>
+            <a href="https://github.com/samzong/mdctl/releases"><img src="https://img.shields.io/github/v/release/samzong/mdctl" alt="Release Version"></a>
+            <a href="https://github.com/samzong/mdctl/blob/main/LICENSE"><img src="https://img.shields.io/github/license/samzong/mdctl" alt="MIT License"></a>
+          </p>
+        </div>
         <h2 id="key-features"><a aria-hidden="true" tabindex="-1" href="#key-features" class="anchor"><span class="icon icon-link"></span></a>Key Features</h2>
         <ul>
           <li>Automatically downloads remote images to a specified local directory.</li>
@@ -119,178 +124,19 @@ mdctl llmstxt https://example.com/sitemap.xml > llms.txt
 # Full-content mode
 mdctl llmstxt -f https://example.com/sitemap.xml > llms-full.txt
 "><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
-        <h2 id="command-reference"><a aria-hidden="true" tabindex="-1" href="#command-reference" class="anchor"><span class="icon icon-link"></span></a>Command Reference</h2>
-        <h3 id="download"><a aria-hidden="true" tabindex="-1" href="#download" class="anchor"><span class="icon icon-link"></span></a><code>download</code></h3>
-        <p>Downloads and localizes remote images in Markdown files.</p>
-        <p>Parameters:</p>
-        <ul>
-          <li><code>-f, --file</code>: Specifies the Markdown file to process.</li>
-          <li><code>-d, --dir</code>: Specifies the directory to process (recursively processes all Markdown files).</li>
-          <li><code>-o, --output</code>: Specifies the directory for saving images (optional).
-            <ul>
-              <li>Default: <code>images</code> subdirectory within the file's directory (file mode).</li>
-              <li>Default: <code>images</code> subdirectory within the specified directory (directory mode).</li>
-            </ul>
-          </li>
-        </ul>
-        <h3 id="translate"><a aria-hidden="true" tabindex="-1" href="#translate" class="anchor"><span class="icon icon-link"></span></a><code>translate</code></h3>
-        <p>The <code>translate</code> command allows you to translate markdown files or directories to a specified language using AI models.</p>
-        <h4 id="supported-ai-models"><a aria-hidden="true" tabindex="-1" href="#supported-ai-models" class="anchor"><span class="icon icon-link"></span></a>Supported AI Models</h4>
-        <ul>
-          <li>OpenAI API (Current)</li>
-          <li>Ollama (Coming Soon)</li>
-          <li>Google Gemini (Coming Soon)</li>
-          <li>Anthropic Claude (Coming Soon)</li>
-        </ul>
-        <h4 id="supported-languages"><a aria-hidden="true" tabindex="-1" href="#supported-languages" class="anchor"><span class="icon icon-link"></span></a>Supported Languages</h4>
-        <ul>
-          <li>Arabic (العربية)</li>
-          <li>Chinese (中文)</li>
-          <li>English (English)</li>
-          <li>French (Français)</li>
-          <li>German (Deutsch)</li>
-          <li>Hindi (हिन्दी)</li>
-          <li>Italian (Italiano)</li>
-          <li>Japanese (日本語)</li>
-          <li>Korean (한국어)</li>
-          <li>Portuguese (Português)</li>
-          <li>Russian (Русский)</li>
-          <li>Spanish (Español)</li>
-          <li>Thai (ไทย)</li>
-          <li>Vietnamese (Tiếng Việt)</li>
-        </ul>
-        <h4 id="configuration"><a aria-hidden="true" tabindex="-1" href="#configuration" class="anchor"><span class="icon icon-link"></span></a>Configuration</h4>
-        <p>Create a configuration file at <code>~/.config/mdctl/config.json</code> with the following content:</p>
-        <pre class="language-json"><code class="language-json code-highlight"><span class="code-line line-number" line="1"><span class="token punctuation">{</span>
-</span><span class="code-line line-number" line="2">  <span class="token property">"translate_prompt"</span><span class="token operator">:</span> <span class="token string">"Please translate the following markdown content to {TARGET_LANG}, keep the markdown format and front matter unchanged:"</span><span class="token punctuation">,</span>
-</span><span class="code-line line-number" line="3">  <span class="token property">"endpoint"</span><span class="token operator">:</span> <span class="token string">"your-api-endpoint"</span><span class="token punctuation">,</span>
-</span><span class="code-line line-number" line="4">  <span class="token property">"api_key"</span><span class="token operator">:</span> <span class="token string">"your-api-key"</span><span class="token punctuation">,</span>
-</span><span class="code-line line-number" line="5">  <span class="token property">"model"</span><span class="token operator">:</span> <span class="token string">"gpt-3.5-turbo"</span><span class="token punctuation">,</span>
-</span><span class="code-line line-number" line="6">  <span class="token property">"temperature"</span><span class="token operator">:</span> <span class="token number">0.0</span><span class="token punctuation">,</span>
-</span><span class="code-line line-number" line="7">  <span class="token property">"top_p"</span><span class="token operator">:</span> <span class="token number">1.0</span>
-</span><span class="code-line line-number" line="8"><span class="token punctuation">}</span>
-</span></code><input type="hidden" value="{
-  &#x22;translate_prompt&#x22;: &#x22;Please translate the following markdown content to {TARGET_LANG}, keep the markdown format and front matter unchanged:&#x22;,
-  &#x22;endpoint&#x22;: &#x22;your-api-endpoint&#x22;,
-  &#x22;api_key&#x22;: &#x22;your-api-key&#x22;,
-  &#x22;model&#x22;: &#x22;gpt-3.5-turbo&#x22;,
-  &#x22;temperature&#x22;: 0.0,
-  &#x22;top_p&#x22;: 1.0
-}
-"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
-        <p>Or use the config command to set up:</p>
-        <pre class="language-bash"><code class="language-bash code-highlight"><span class="code-line line-number" line="1"><span class="token comment"># Set API endpoint</span>
-</span><span class="code-line line-number" line="2">mdctl config <span class="token builtin class-name">set</span> <span class="token parameter variable">-k</span> endpoint <span class="token parameter variable">-v</span> <span class="token string">"your-api-endpoint"</span>
-</span><span class="code-line line-number" line="3">
-</span><span class="code-line line-number" line="4"><span class="token comment"># Set API key</span>
-</span><span class="code-line line-number" line="5">mdctl config <span class="token builtin class-name">set</span> <span class="token parameter variable">-k</span> api_key <span class="token parameter variable">-v</span> <span class="token string">"your-api-key"</span>
-</span><span class="code-line line-number" line="6">
-</span><span class="code-line line-number" line="7"><span class="token comment"># Set model</span>
-</span><span class="code-line line-number" line="8">mdctl config <span class="token builtin class-name">set</span> <span class="token parameter variable">-k</span> model <span class="token parameter variable">-v</span> <span class="token string">"gpt-3.5-turbo"</span>
-</span></code><input type="hidden" value="# Set API endpoint
-mdctl config set -k endpoint -v &#x22;your-api-endpoint&#x22;
-
-# Set API key
-mdctl config set -k api_key -v &#x22;your-api-key&#x22;
-
-# Set model
-mdctl config set -k model -v &#x22;gpt-3.5-turbo&#x22;
-"><div onclick="copied(this)" class="copied"><svg class="octicon-copy" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path><path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path></svg><svg class="octicon-check" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" height="12" width="12"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg></div></pre>
-        <p>Features:</p>
-        <ul>
-          <li>Supports translating single files or entire directories</li>
-          <li>Maintains directory structure when translating directories</li>
-          <li>Adds front matter to track translation status</li>
-          <li>Supports force translation with <code>-F</code> flag</li>
-          <li>Supports translation between multiple languages</li>
-          <li>Shows translation progress with detailed status information</li>
-        </ul>
-        <h3 id="upload"><a aria-hidden="true" tabindex="-1" href="#upload" class="anchor"><span class="icon icon-link"></span></a><code>upload</code></h3>
-        <p>The <code>upload</code> command uploads local images in markdown files to cloud storage and rewrites URLs to reference the uploaded versions.</p>
-        <p>Features:</p>
-        <ul>
-          <li>Supports multiple cloud storage providers with S3-compatible APIs</li>
-          <li>Preserves relative link structure</li>
-          <li>Configurable upload path prefixes</li>
-          <li>Custom domain support for generated URLs</li>
-          <li>Conflict resolution policies</li>
-          <li>Concurrent uploads for better performance</li>
-          <li>Dry-run mode for previewing changes</li>
-        </ul>
-        <p>Parameters:</p>
-        <ul>
-          <li><code>-f, --file</code>: Source markdown file to process</li>
-          <li><code>-d, --dir</code>: Source directory containing markdown files to process</li>
-          <li><code>-p, --provider</code>: Cloud storage provider (s3, r2, minio)</li>
-          <li><code>-b, --bucket</code>: Cloud storage bucket name</li>
-          <li><code>-c, --custom-domain</code>: Custom domain for generated URLs</li>
-          <li><code>--prefix</code>: Path prefix for uploaded files</li>
-          <li><code>--dry-run</code>: Preview changes without uploading</li>
-          <li><code>--concurrency</code>: Number of concurrent uploads (default: 5)</li>
-          <li><code>-F, --force</code>: Force upload even if file exists</li>
-          <li><code>--skip-verify</code>: Skip SSL verification</li>
-          <li><code>--ca-cert</code>: Path to CA certificate</li>
-          <li><code>--conflict</code>: Conflict policy (rename, version, overwrite) (default: rename)</li>
-          <li><code>--cache-dir</code>: Cache directory path</li>
-          <li><code>--include</code>: Comma-separated list of file extensions to include</li>
-          <li><code>--storage</code>: Storage name to use from configuration</li>
-          <li><code>-v, --verbose</code>: Enable verbose output</li>
-        </ul>
-        <h3 id="export"><a aria-hidden="true" tabindex="-1" href="#export" class="anchor"><span class="icon icon-link"></span></a><code>export</code></h3>
-        <p>The <code>export</code> command converts markdown files to various document formats like DOCX, PDF, and EPUB using Pandoc as the underlying conversion tool.</p>
-        <p>Features:</p>
-        <ul>
-          <li>Supports exporting single files or entire directories</li>
-          <li>Generates professional documents from markdown content</li>
-          <li>Supports various document formats (DOCX, PDF, EPUB)</li>
-          <li>Table of contents generation</li>
-          <li>Custom document templates</li>
-          <li>Heading level adjustment</li>
-          <li>Support for different site structures (basic, MkDocs, Hugo, Docusaurus)</li>
-        </ul>
-        <p>Parameters:</p>
-        <ul>
-          <li><code>-f, --file</code>: Source markdown file to export</li>
-          <li><code>-d, --dir</code>: Source directory containing markdown files to export</li>
-          <li><code>-o, --output</code>: Output file path (required)</li>
-          <li><code>-F, --format</code>: Output format (docx, pdf, epub) (default: docx)</li>
-          <li><code>-t, --template</code>: Word template file path</li>
-          <li><code>-s, --site-type</code>: Site type (basic, mkdocs, hugo, docusaurus) (default: basic)</li>
-          <li><code>--toc</code>: Generate table of contents</li>
-          <li><code>--toc-depth</code>: Depth of table of contents (default: 3)</li>
-          <li><code>--shift-heading-level-by</code>: Shift heading level by N</li>
-          <li><code>--file-as-title</code>: Use filename as section title</li>
-          <li><code>-n, --nav-path</code>: Specify the navigation path to export</li>
-          <li><code>-v, --verbose</code>: Enable verbose output</li>
-        </ul>
-        <h3 id="llmstxt"><a aria-hidden="true" tabindex="-1" href="#llmstxt" class="anchor"><span class="icon icon-link"></span></a><code>llmstxt</code></h3>
-        <p>The <code>llmstxt</code> command generates a markdown-formatted text file from a website's sitemap.xml, which is ideal for training or fine-tuning language models.</p>
-        <p>Features:</p>
-        <ul>
-          <li>Extracts website content in a structured format</li>
-          <li>Supports standard mode (title and description only) and full-content mode</li>
-          <li>Allows filtering pages with include/exclude patterns</li>
-          <li>Configurable concurrency and timeout settings</li>
-          <li>Output to file or stdout</li>
-        </ul>
-        <p>Parameters:</p>
-        <ul>
-          <li><code>[url]</code>: The URL to the sitemap.xml file (required)</li>
-          <li><code>-o, --output</code>: Output file path (default: stdout)</li>
-          <li><code>-i, --include-path</code>: Glob patterns for paths to include (can be specified multiple times)</li>
-          <li><code>-e, --exclude-path</code>: Glob patterns for paths to exclude (can be specified multiple times)</li>
-          <li><code>-f, --full</code>: Enable full-content mode (extract page content)</li>
-          <li><code>-c, --concurrency</code>: Number of concurrent requests (default: 5)</li>
-          <li><code>--timeout</code>: Request timeout in seconds (default: 30)</li>
-          <li><code>-v, --verbose</code>: Enable verbose output</li>
-        </ul>
-        <h2 id="notes"><a aria-hidden="true" tabindex="-1" href="#notes" class="anchor"><span class="icon icon-link"></span></a>Notes</h2>
+        <h2 id="developers-guide"><a aria-hidden="true" tabindex="-1" href="#developers-guide" class="anchor"><span class="icon icon-link"></span></a>Developer's Guide</h2>
+        <p>If you are interested in contributing, please refer to the <a href="DEVELOPMENT.html">DEVELOPMENT.md</a> file for a complete technical architecture, component design, and development guide.</p>
+        <h2 id="contributing"><a aria-hidden="true" tabindex="-1" href="#contributing" class="anchor"><span class="icon icon-link"></span></a>Contributing</h2>
+        <p>Welcome to contribute code, report issues, or suggest features! Please follow these steps:</p>
         <ol>
-          <li><code>-f</code> and <code>-d</code> parameters cannot be used together</li>
-          <li>If no output directory is specified, the tool will automatically create a default <code>images</code> directory</li>
-          <li>Only remote images (http/https) will be processed, local image references will not be modified</li>
-          <li>Image filenames will retain their original names, if duplicates occur, a hash of the URL will be added as a suffix</li>
+          <li>Fork this repository</li>
+          <li>Create your feature branch (<code>git checkout -b feature/amazing-feature</code>)</li>
+          <li>Commit your changes (<code>git commit -m 'Add some amazing feature'</code>)</li>
+          <li>Push to the branch (<code>git push origin feature/amazing-feature</code>)</li>
+          <li>Open a Pull Request</li>
         </ol>
+        <h2 id="license"><a aria-hidden="true" tabindex="-1" href="#license" class="anchor"><span class="icon icon-link"></span></a>License</h2>
+        <p>This project is licensed under the MIT License - see the <a href="LICENSE" src="LICENSE">LICENSE</a> file for details.</p>
       </markdown-style>
     </div>
     <script src="js/demo-preview.js?v=1.34.1"></script>
