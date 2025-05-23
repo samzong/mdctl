@@ -9,6 +9,7 @@
     <a href="https://github.com/samzong/mdctl/releases"><img src="https://img.shields.io/github/v/release/samzong/mdctl" alt="Release Version" /></a>
     <a href="https://goreportcard.com/report/github.com/samzong/mdctl"><img src="https://goreportcard.com/badge/github.com/samzong/mdctl" alt="go report" /></a>
     <a href="https://github.com/samzong/mdctl/blob/main/LICENSE"><img src="https://img.shields.io/github/license/samzong/mdctl" alt="MIT License" /></a>
+    <a href="https://deepwiki.com/samzong/mdctl"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
   </p>
 </div>
 
