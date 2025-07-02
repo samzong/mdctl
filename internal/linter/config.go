@@ -10,10 +10,10 @@ import (
 type ConfigFile struct {
 	// Default configuration
 	Default bool `json:"default,omitempty"`
-	
+
 	// Extends other configuration files
 	Extends string `json:"extends,omitempty"`
-	
+
 	// Rule-specific configuration
 	MD001 *RuleConfig `json:"MD001,omitempty"`
 	MD003 *RuleConfig `json:"MD003,omitempty"`
@@ -32,7 +32,7 @@ type ConfigFile struct {
 type RuleConfig struct {
 	// Whether the rule is enabled
 	Enabled *bool `json:"enabled,omitempty"`
-	
+
 	// Rule-specific options
 	Options map[string]interface{} `json:"options,omitempty"`
 }
@@ -43,21 +43,21 @@ func LoadConfigFile(filename string) (*ConfigFile, error) {
 	if filename == "" {
 		filename = findConfigFile()
 	}
-	
+
 	if filename == "" {
 		return &ConfigFile{Default: true}, nil
 	}
-	
+
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var config ConfigFile
 	if err := json.Unmarshal(data, &config); err != nil {
 		return nil, err
 	}
-	
+
 	return &config, nil
 }
 
@@ -76,7 +76,7 @@ func (c *ConfigFile) ApplyToRuleSet(rs *RuleSet) {
 		"MD032": c.MD032,
 		"MD047": c.MD047,
 	}
-	
+
 	for ruleID, ruleConfig := range ruleConfigs {
 		if ruleConfig != nil && ruleConfig.Enabled != nil {
 			if rule, exists := rs.rules[ruleID]; exists {
@@ -95,13 +95,13 @@ func findConfigFile() string {
 		".markdownlintrc.json",
 		".markdownlintrc.jsonc",
 	}
-	
+
 	for _, filename := range configFiles {
 		if _, err := os.Stat(filename); err == nil {
 			return filename
 		}
 	}
-	
+
 	// Also check in home directory
 	if home, err := os.UserHomeDir(); err == nil {
 		for _, filename := range configFiles {
@@ -111,7 +111,7 @@ func findConfigFile() string {
 			}
 		}
 	}
-	
+
 	return ""
 }
 
@@ -131,12 +131,12 @@ func CreateDefaultConfig(filename string) error {
 		MD032:   &RuleConfig{Enabled: boolPtr(true)},
 		MD047:   &RuleConfig{Enabled: boolPtr(true)},
 	}
-	
+
 	data, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
 		return err
 	}
-	
+
 	return os.WriteFile(filename, data, 0644)
 }
 

@@ -15,7 +15,7 @@ func NewFixer() *Fixer {
 	f := &Fixer{
 		rules: make(map[string]func([]string) ([]string, int)),
 	}
-	
+
 	// Register fix functions for each rule
 	f.rules["MD009"] = f.fixTrailingSpaces
 	f.rules["MD010"] = f.fixHardTabs
@@ -25,7 +25,7 @@ func NewFixer() *Fixer {
 	f.rules["MD023"] = f.fixHeadingIndentation
 	f.rules["MD032"] = f.fixListSpacing
 	f.rules["MD047"] = f.fixFileEndNewline
-	
+
 	return f
 }
 
@@ -33,27 +33,27 @@ func NewFixer() *Fixer {
 func (f *Fixer) ApplyFixes(content string, issues []*Issue) (string, int) {
 	lines := strings.Split(content, "\n")
 	totalFixed := 0
-	
+
 	// Group issues by rule for efficient processing
 	ruleIssues := make(map[string][]*Issue)
 	for _, issue := range issues {
 		ruleIssues[issue.Rule] = append(ruleIssues[issue.Rule], issue)
 	}
-	
+
 	// Apply fixes for each rule
 	for rule, ruleSpecificIssues := range ruleIssues {
 		if fixFunc, exists := f.rules[rule]; exists {
 			var fixed int
 			lines, fixed = fixFunc(lines)
 			totalFixed += fixed
-			
+
 			// Mark issues as fixed
 			for _, issue := range ruleSpecificIssues {
 				issue.Fixed = true
 			}
 		}
 	}
-	
+
 	return strings.Join(lines, "\n"), totalFixed
 }
 
@@ -87,19 +87,19 @@ func (f *Fixer) fixMultipleBlankLines(lines []string) ([]string, int) {
 	var result []string
 	fixed := 0
 	prevBlank := false
-	
+
 	for _, line := range lines {
 		isBlank := strings.TrimSpace(line) == ""
-		
+
 		if isBlank && prevBlank {
 			fixed++ // Count removed blank lines
 			continue
 		}
-		
+
 		result = append(result, line)
 		prevBlank = isBlank
 	}
-	
+
 	return result, fixed
 }
 
@@ -107,7 +107,7 @@ func (f *Fixer) fixMultipleBlankLines(lines []string) ([]string, int) {
 func (f *Fixer) fixNoSpaceAfterHash(lines []string) ([]string, int) {
 	fixed := 0
 	re := regexp.MustCompile(`^(#+)([^# ])`)
-	
+
 	for i, line := range lines {
 		trimmed := strings.TrimSpace(line)
 		if re.MatchString(trimmed) {
@@ -115,7 +115,7 @@ func (f *Fixer) fixNoSpaceAfterHash(lines []string) ([]string, int) {
 			fixed++
 		}
 	}
-	
+
 	return lines, fixed
 }
 
@@ -123,7 +123,7 @@ func (f *Fixer) fixNoSpaceAfterHash(lines []string) ([]string, int) {
 func (f *Fixer) fixMultipleSpacesAfterHash(lines []string) ([]string, int) {
 	fixed := 0
 	re := regexp.MustCompile(`^(#+)\s{2,}`)
-	
+
 	for i, line := range lines {
 		trimmed := strings.TrimSpace(line)
 		if re.MatchString(trimmed) {
@@ -131,7 +131,7 @@ func (f *Fixer) fixMultipleSpacesAfterHash(lines []string) ([]string, int) {
 			fixed++
 		}
 	}
-	
+
 	return lines, fixed
 }
 
@@ -139,14 +139,14 @@ func (f *Fixer) fixMultipleSpacesAfterHash(lines []string) ([]string, int) {
 func (f *Fixer) fixHeadingIndentation(lines []string) ([]string, int) {
 	fixed := 0
 	re := regexp.MustCompile(`^ +(#.*)`)
-	
+
 	for i, line := range lines {
 		if re.MatchString(line) {
 			lines[i] = re.ReplaceAllString(line, "$1")
 			fixed++
 		}
 	}
-	
+
 	return lines, fixed
 }
 
@@ -155,7 +155,7 @@ func (f *Fixer) fixListSpacing(lines []string) ([]string, int) {
 	fixed := 0
 	var result []string
 	listRe := regexp.MustCompile(`^(\s*[*+-] )`)
-	
+
 	for i, line := range lines {
 		if listRe.MatchString(line) {
 			// Check if previous line needs a blank line
@@ -166,7 +166,7 @@ func (f *Fixer) fixListSpacing(lines []string) ([]string, int) {
 		}
 		result = append(result, line)
 	}
-	
+
 	return result, fixed
 }
 
@@ -175,14 +175,14 @@ func (f *Fixer) fixFileEndNewline(lines []string) ([]string, int) {
 	if len(lines) == 0 {
 		return lines, 0
 	}
-	
+
 	// Remove trailing empty lines
 	for len(lines) > 0 && strings.TrimSpace(lines[len(lines)-1]) == "" {
 		lines = lines[:len(lines)-1]
 	}
-	
+
 	// Add single empty line at the end
 	lines = append(lines, "")
-	
+
 	return lines, 1
 }

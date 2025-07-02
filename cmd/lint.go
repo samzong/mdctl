@@ -12,14 +12,14 @@ import (
 )
 
 var (
-	autoFix       bool
-	configRules   []string
-	outputFormat  string
-	rulesFile     string
-	enableRules   []string
-	disableRules  []string
-	initConfig    bool
-	configOutput  string
+	autoFix      bool
+	configRules  []string
+	outputFormat string
+	rulesFile    string
+	enableRules  []string
+	disableRules []string
+	initConfig   bool
+	configOutput string
 )
 
 var lintCmd = &cobra.Command{
@@ -61,15 +61,15 @@ Examples:
 			if configFile == "" {
 				configFile = ".markdownlint.json"
 			}
-			
+
 			if err := linter.CreateDefaultConfig(configFile); err != nil {
 				return fmt.Errorf("failed to create config file: %v", err)
 			}
-			
+
 			fmt.Printf("Created markdownlint configuration file: %s\n", configFile)
 			return nil
 		}
-		
+
 		if len(args) == 0 {
 			return fmt.Errorf("at least one markdown file must be specified")
 		}
@@ -121,7 +121,7 @@ Examples:
 		// Process files
 		var totalIssues int
 		var totalFixed int
-		
+
 		for _, file := range markdownFiles {
 			if verbose {
 				fmt.Printf("Linting: %s\n", file)
@@ -186,10 +186,10 @@ func displayDefaultResults(filename string, result *linter.Result, config *linte
 		if issue.Fixed {
 			status = "✓"
 		}
-		
-		fmt.Printf("  %s Line %d: %s (%s)\n", 
+
+		fmt.Printf("  %s Line %d: %s (%s)\n",
 			status, issue.Line, issue.Message, issue.Rule)
-		
+
 		if config.Verbose && issue.Context != "" {
 			fmt.Printf("    Context: %s\n", issue.Context)
 		}
@@ -208,12 +208,12 @@ func displayJSONResults(filename string, result *linter.Result) error {
 		"issues":      result.Issues,
 		"fixed_count": result.FixedCount,
 	}
-	
+
 	data, err := json.MarshalIndent(output, "", "  ")
 	if err != nil {
 		return err
 	}
-	
+
 	fmt.Println(string(data))
 	return nil
 }
@@ -225,8 +225,8 @@ func displayGitHubResults(filename string, result *linter.Result) error {
 		if issue.Fixed {
 			level = "notice"
 		}
-		
-		fmt.Printf("::%s file=%s,line=%d::%s (%s)\n", 
+
+		fmt.Printf("::%s file=%s,line=%d::%s (%s)\n",
 			level, filename, issue.Line, issue.Message, issue.Rule)
 	}
 	return nil

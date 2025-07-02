@@ -46,7 +46,7 @@ type Linter struct {
 // New creates a new linter instance
 func New(config *Config) *Linter {
 	rules := NewRuleSet()
-	
+
 	// Load configuration file if specified
 	if config.RulesFile != "" {
 		if configFile, err := LoadConfigFile(config.RulesFile); err == nil {
@@ -60,12 +60,12 @@ func New(config *Config) *Linter {
 			configFile.ApplyToRuleSet(rules)
 		}
 	}
-	
+
 	// Apply rule configuration from command line
 	if len(config.EnableRules) > 0 {
 		rules.EnableOnly(config.EnableRules)
 	}
-	
+
 	if len(config.DisableRules) > 0 {
 		rules.Disable(config.DisableRules)
 	}
@@ -96,7 +96,7 @@ func (l *Linter) LintContent(filename, content string) (*Result, error) {
 	}
 
 	lines := strings.Split(content, "\n")
-	
+
 	// Apply all enabled rules
 	for _, rule := range l.rules.GetEnabledRules() {
 		issues := rule.Check(lines)
@@ -107,13 +107,13 @@ func (l *Linter) LintContent(filename, content string) (*Result, error) {
 	if l.config.AutoFix && len(result.Issues) > 0 {
 		fixedContent, fixedCount := l.applyFixes(content, result.Issues)
 		result.FixedCount = fixedCount
-		
+
 		// Write fixed content back to file
 		if fixedCount > 0 {
 			if err := os.WriteFile(filename, []byte(fixedContent), 0644); err != nil {
 				return nil, fmt.Errorf("failed to write fixed content: %v", err)
 			}
-			
+
 			// Mark issues as fixed
 			for _, issue := range result.Issues {
 				if issue.Rule != "MD013" { // Don't mark line length issues as fixed automatically
@@ -130,10 +130,10 @@ func (l *Linter) LintContent(filename, content string) (*Result, error) {
 func (l *Linter) applyFixes(content string, issues []*Issue) (string, int) {
 	// Use the dedicated fixer for rule-specific fixes
 	fixedContent, fixedCount := l.fixer.ApplyFixes(content, issues)
-	
+
 	// Then apply general formatting fixes
 	finalContent := l.formatter.Format(fixedContent)
-	
+
 	// If formatter made additional changes, count them
 	if finalContent != fixedContent && fixedCount == 0 {
 		fixedCount = l.countFixableIssues(issues)

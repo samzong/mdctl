@@ -23,9 +23,9 @@ type BaseRule struct {
 	enabled     bool
 }
 
-func (r *BaseRule) ID() string          { return r.id }
-func (r *BaseRule) Description() string { return r.description }
-func (r *BaseRule) Enabled() bool       { return r.enabled }
+func (r *BaseRule) ID() string              { return r.id }
+func (r *BaseRule) Description() string     { return r.description }
+func (r *BaseRule) Enabled() bool           { return r.enabled }
 func (r *BaseRule) SetEnabled(enabled bool) { r.enabled = enabled }
 
 // RuleSet manages a collection of linting rules
@@ -38,7 +38,7 @@ func NewRuleSet() *RuleSet {
 	rs := &RuleSet{
 		rules: make(map[string]Rule),
 	}
-	
+
 	// Add default rules
 	rs.addRule(&MD001{BaseRule: BaseRule{id: "MD001", description: "Heading levels should only increment by one level at a time", enabled: true}})
 	rs.addRule(&MD003{BaseRule: BaseRule{id: "MD003", description: "Heading style should be consistent", enabled: true}})
@@ -51,7 +51,7 @@ func NewRuleSet() *RuleSet {
 	rs.addRule(&MD023{BaseRule: BaseRule{id: "MD023", description: "Headings must start at the beginning of the line", enabled: true}})
 	rs.addRule(&MD032{BaseRule: BaseRule{id: "MD032", description: "Lists should be surrounded by blank lines", enabled: true}})
 	rs.addRule(&MD047{BaseRule: BaseRule{id: "MD047", description: "Files should end with a single newline character", enabled: true}})
-	
+
 	return rs
 }
 
@@ -76,7 +76,7 @@ func (rs *RuleSet) EnableOnly(ruleIDs []string) {
 	for _, rule := range rs.rules {
 		rule.SetEnabled(false)
 	}
-	
+
 	// Enable specified rules
 	for _, id := range ruleIDs {
 		if rule, exists := rs.rules[id]; exists {
@@ -100,12 +100,12 @@ func (rs *RuleSet) LoadFromFile(filename string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	var config map[string]interface{}
 	if err := json.Unmarshal(data, &config); err != nil {
 		return err
 	}
-	
+
 	// Apply configuration
 	for ruleID, setting := range config {
 		if rule, exists := rs.rules[ruleID]; exists {
@@ -120,7 +120,7 @@ func (rs *RuleSet) LoadFromFile(filename string) error {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -134,7 +134,7 @@ type MD001 struct {
 func (r *MD001) Check(lines []string) []*Issue {
 	var issues []*Issue
 	lastLevel := 0
-	
+
 	for i, line := range lines {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "#") {
@@ -146,7 +146,7 @@ func (r *MD001) Check(lines []string) []*Issue {
 					break
 				}
 			}
-			
+
 			if lastLevel > 0 && level > lastLevel+1 {
 				issues = append(issues, &Issue{
 					Line:    i + 1,
@@ -158,7 +158,7 @@ func (r *MD001) Check(lines []string) []*Issue {
 			lastLevel = level
 		}
 	}
-	
+
 	return issues
 }
 
@@ -170,7 +170,7 @@ type MD003 struct {
 func (r *MD003) Check(lines []string) []*Issue {
 	var issues []*Issue
 	var firstStyle string
-	
+
 	for i, line := range lines {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "#") {
@@ -187,7 +187,7 @@ func (r *MD003) Check(lines []string) []*Issue {
 			}
 		}
 	}
-	
+
 	return issues
 }
 
@@ -198,7 +198,7 @@ type MD009 struct {
 
 func (r *MD009) Check(lines []string) []*Issue {
 	var issues []*Issue
-	
+
 	for i, line := range lines {
 		if strings.HasSuffix(line, " ") || strings.HasSuffix(line, "\t") {
 			issues = append(issues, &Issue{
@@ -209,7 +209,7 @@ func (r *MD009) Check(lines []string) []*Issue {
 			})
 		}
 	}
-	
+
 	return issues
 }
 
@@ -220,7 +220,7 @@ type MD010 struct {
 
 func (r *MD010) Check(lines []string) []*Issue {
 	var issues []*Issue
-	
+
 	for i, line := range lines {
 		if strings.Contains(line, "\t") {
 			issues = append(issues, &Issue{
@@ -231,7 +231,7 @@ func (r *MD010) Check(lines []string) []*Issue {
 			})
 		}
 	}
-	
+
 	return issues
 }
 
@@ -243,7 +243,7 @@ type MD012 struct {
 func (r *MD012) Check(lines []string) []*Issue {
 	var issues []*Issue
 	consecutiveBlank := 0
-	
+
 	for i, line := range lines {
 		if strings.TrimSpace(line) == "" {
 			consecutiveBlank++
@@ -258,7 +258,7 @@ func (r *MD012) Check(lines []string) []*Issue {
 			consecutiveBlank = 0
 		}
 	}
-	
+
 	return issues
 }
 
@@ -270,7 +270,7 @@ type MD013 struct {
 func (r *MD013) Check(lines []string) []*Issue {
 	var issues []*Issue
 	maxLength := 80 // Default line length limit
-	
+
 	for i, line := range lines {
 		if len(line) > maxLength {
 			issues = append(issues, &Issue{
@@ -281,7 +281,7 @@ func (r *MD013) Check(lines []string) []*Issue {
 			})
 		}
 	}
-	
+
 	return issues
 }
 
@@ -292,7 +292,7 @@ type MD018 struct {
 
 func (r *MD018) Check(lines []string) []*Issue {
 	var issues []*Issue
-	
+
 	for i, line := range lines {
 		line = strings.TrimSpace(line)
 		if match, _ := regexp.MatchString(`^#+[^# ]`, line); match {
@@ -304,7 +304,7 @@ func (r *MD018) Check(lines []string) []*Issue {
 			})
 		}
 	}
-	
+
 	return issues
 }
 
@@ -315,7 +315,7 @@ type MD019 struct {
 
 func (r *MD019) Check(lines []string) []*Issue {
 	var issues []*Issue
-	
+
 	for i, line := range lines {
 		line = strings.TrimSpace(line)
 		if match, _ := regexp.MatchString(`^#+  +`, line); match {
@@ -327,7 +327,7 @@ func (r *MD019) Check(lines []string) []*Issue {
 			})
 		}
 	}
-	
+
 	return issues
 }
 
@@ -338,7 +338,7 @@ type MD023 struct {
 
 func (r *MD023) Check(lines []string) []*Issue {
 	var issues []*Issue
-	
+
 	for i, line := range lines {
 		if match, _ := regexp.MatchString(`^ +#`, line); match {
 			issues = append(issues, &Issue{
@@ -349,7 +349,7 @@ func (r *MD023) Check(lines []string) []*Issue {
 			})
 		}
 	}
-	
+
 	return issues
 }
 
@@ -360,7 +360,7 @@ type MD032 struct {
 
 func (r *MD032) Check(lines []string) []*Issue {
 	var issues []*Issue
-	
+
 	for i, line := range lines {
 		line = strings.TrimSpace(line)
 		if match, _ := regexp.MatchString(`^[*+-] `, line); match {
@@ -375,7 +375,7 @@ func (r *MD032) Check(lines []string) []*Issue {
 			}
 		}
 	}
-	
+
 	return issues
 }
 
@@ -386,7 +386,7 @@ type MD047 struct {
 
 func (r *MD047) Check(lines []string) []*Issue {
 	var issues []*Issue
-	
+
 	if len(lines) > 0 {
 		lastLine := lines[len(lines)-1]
 		if lastLine != "" {
@@ -397,6 +397,6 @@ func (r *MD047) Check(lines []string) []*Issue {
 			})
 		}
 	}
-	
+
 	return issues
 }
