@@ -11,6 +11,7 @@ import (
 var (
 	includePaths []string
 	excludePaths []string
+	ignorePaths  []string
 	outputPath   string
 	fullMode     bool
 	concurrency  int
@@ -27,21 +28,29 @@ language models.
 In standard mode, only title and description are extracted. In full mode (-f flag), 
 the content of each page is also extracted.
 
+Use include/exclude patterns or ignore patterns to filter specific pages.
+
 Examples:
   # Standard mode
   mdctl llmstxt https://example.com/sitemap.xml > llms.txt
 
   # Full-content mode
-  mdctl llmstxt -f https://example.com/sitemap.xml > llms-full.txt`,
+  mdctl llmstxt -f https://example.com/sitemap.xml > llms-full.txt
+
+  # Filter out unwanted pages using ignore patterns
+  mdctl llmstxt --ignore "*/admin/*" --ignore "*/private/*" https://example.com/sitemap.xml > llms.txt`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			sitemapURL := args[0]
 
 			// Create a generator and configure options
+			// Combine excludePaths and ignorePaths for backward compatibility
+			allExcludePaths := append(excludePaths, ignorePaths...)
+
 			config := llmstxt.GeneratorConfig{
 				SitemapURL:   sitemapURL,
 				IncludePaths: includePaths,
-				ExcludePaths: excludePaths,
+				ExcludePaths: allExcludePaths,
 				FullMode:     fullMode,
 				Concurrency:  concurrency,
 				Timeout:      timeout,
@@ -77,6 +86,7 @@ func init() {
 	llmstxtCmd.Flags().StringVarP(&outputPath, "output", "o", "", "Output file path (default: stdout)")
 	llmstxtCmd.Flags().StringSliceVarP(&includePaths, "include-path", "i", []string{}, "Glob patterns for paths to include (can be specified multiple times)")
 	llmstxtCmd.Flags().StringSliceVarP(&excludePaths, "exclude-path", "e", []string{}, "Glob patterns for paths to exclude (can be specified multiple times)")
+	llmstxtCmd.Flags().StringSliceVar(&ignorePaths, "ignore", []string{}, "Glob patterns for paths to ignore (can be specified multiple times)")
 	llmstxtCmd.Flags().BoolVarP(&fullMode, "full", "f", false, "Enable full-content mode (extract page content)")
 	llmstxtCmd.Flags().IntVarP(&concurrency, "concurrency", "c", 5, "Number of concurrent requests")
 	llmstxtCmd.Flags().IntVar(&timeout, "timeout", 30, "Request timeout in seconds")
