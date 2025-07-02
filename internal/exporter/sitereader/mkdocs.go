@@ -43,7 +43,7 @@ func (r *MkDocsReader) Detect(dir string) bool {
 	return true
 }
 
-func (r *MkDocsReader) ReadStructure(dir string, configPath string, navPath string) ([]string, error) {
+func (r *MkDocsReader) ReadStructure(dir string, configPath string, navPath string) (FileInfoList, error) {
 	// Setting up the Logger
 	if r.Logger == nil {
 		r.Logger = log.New(io.Discard, "", 0)
@@ -90,18 +90,27 @@ func (r *MkDocsReader) ReadStructure(dir string, configPath string, navPath stri
 	} else {
 		// If no navigation config, try to find all Markdown files
 		r.Logger.Println("No navigation configuration found, searching for all markdown files")
-		return getAllMarkdownFiles(docsDir)
+		files, err := getAllMarkdownFiles(docsDir)
+		if err != nil {
+			return nil, err
+		}
+		// Convert to FileInfoList with level 0 (all at top level)
+		fileInfos := make(FileInfoList, len(files))
+		for i, file := range files {
+			fileInfos[i] = FileInfo{Path: file, NavLevel: 0}
+		}
+		return fileInfos, nil
 	}
 
-	// Parse navigation structure, get file list
-	files, err := parseNavigation(nav, docsDir, navPath)
+	// Parse navigation structure, get file list with levels
+	fileInfos, err := parseNavigation(nav, docsDir, navPath, 0)
 	if err != nil {
 		r.Logger.Printf("Failed to parse navigation: %s", err)
 		return nil, fmt.Errorf("failed to parse navigation: %s", err)
 	}
 
-	r.Logger.Printf("Found %d files in navigation", len(files))
-	return files, nil
+	r.Logger.Printf("Found %d files in navigation", len(fileInfos))
+	return fileInfos, nil
 }
 
 // readAndMergeConfig Read and merge MkDocs config file, handling INHERIT directive
@@ -209,18 +218,18 @@ func preprocessMarkdownFile(filePath string) error {
 }
 
 // parseNavigation Parse MkDocs navigation structure
-func parseNavigation(nav interface{}, docsDir string, navPath string) ([]string, error) {
-	var files []string
+func parseNavigation(nav interface{}, docsDir string, navPath string, currentLevel int) (FileInfoList, error) {
+	var fileInfos FileInfoList
 
 	switch v := nav.(type) {
 	case []interface{}:
 		// Navigation is a list
 		for _, item := range v {
-			itemFiles, err := parseNavigation(item, docsDir, navPath)
+			itemFileInfos, err := parseNavigation(item, docsDir, navPath, currentLevel)
 			if err != nil {
 				return nil, err
 			}
-			files = append(files, itemFiles...)
+			fileInfos = append(fileInfos, itemFileInfos...)
 		}
 	case map[string]interface{}:
 		// Navigation is a map
@@ -233,19 +242,19 @@ func parseNavigation(nav interface{}, docsDir string, navPath string) ([]string,
 					// If it's a multi-level path, continue matching the next level
 					if len(navParts) > 1 {
 						subNavPath := strings.Join(navParts[1:], "/")
-						itemFiles, err := parseNavigation(value, docsDir, subNavPath)
+						itemFileInfos, err := parseNavigation(value, docsDir, subNavPath, currentLevel+1)
 						if err != nil {
 							return nil, err
 						}
-						files = append(files, itemFiles...)
+						fileInfos = append(fileInfos, itemFileInfos...)
 						continue
 					} else {
 						// If it's a single-level path and matches, only handle this node
-						itemFiles, err := parseNavigation(value, docsDir, "")
+						itemFileInfos, err := parseNavigation(value, docsDir, "", currentLevel+1)
 						if err != nil {
 							return nil, err
 						}
-						files = append(files, itemFiles...)
+						fileInfos = append(fileInfos, itemFileInfos...)
 						continue
 					}
 				} else {
@@ -254,12 +263,23 @@ func parseNavigation(nav interface{}, docsDir string, navPath string) ([]string,
 				}
 			}
 
-			// If no nav path is specified or already matched the path, handle normally
-			itemFiles, err := parseNavigation(value, docsDir, "")
-			if err != nil {
-				return nil, err
+			// Check if the value is a string (direct file mapping) or another structure (folder)
+			switch value.(type) {
+			case string:
+				// Direct file mapping like "page1": doc1.md - stay at current level
+				itemFileInfos, err := parseNavigation(value, docsDir, "", currentLevel)
+				if err != nil {
+					return nil, err
+				}
+				fileInfos = append(fileInfos, itemFileInfos...)
+			default:
+				// Nested structure like folder: [...] - increase level
+				itemFileInfos, err := parseNavigation(value, docsDir, "", currentLevel+1)
+				if err != nil {
+					return nil, err
+				}
+				fileInfos = append(fileInfos, itemFileInfos...)
 			}
-			files = append(files, itemFiles...)
 		}
 	case string:
 		// Navigation item is a file path
@@ -268,13 +288,16 @@ func parseNavigation(nav interface{}, docsDir string, navPath string) ([]string,
 			if _, err := os.Stat(filePath); err == nil {
 				// If no nav path is specified or already handled in nav path filtering, add file
 				if navPath == "" {
-					files = append(files, filePath)
+					fileInfos = append(fileInfos, FileInfo{
+						Path:     filePath,
+						NavLevel: currentLevel,
+					})
 				}
 			}
 		}
 	}
 
-	return files, nil
+	return fileInfos, nil
 }
 
 // getAllMarkdownFiles Get all Markdown files in a directory

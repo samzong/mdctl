@@ -152,7 +152,7 @@ func (e *DefaultExporter) ExportDirectory(inputDir, output string, options Expor
 	e.logger.Printf("Added input directory to resource paths: %s", inputDir)
 
 	// Depending on site type, choose different processing
-	var files []string
+	var fileInfos sitereader.FileInfoList
 	var err error
 
 	if options.SiteType != "" && options.SiteType != "basic" {
@@ -173,36 +173,42 @@ func (e *DefaultExporter) ExportDirectory(inputDir, output string, options Expor
 		e.logger.Printf("Directory confirmed as %s site", options.SiteType)
 
 		e.logger.Println("Reading site structure...")
-		files, err = reader.ReadStructure(inputDir, "", options.NavPath)
+		fileInfos, err = reader.ReadStructure(inputDir, "", options.NavPath)
 		if err != nil {
 			e.logger.Printf("Error reading site structure: %s", err)
 			return err
 		}
-		e.logger.Printf("Found %d files in site structure", len(files))
+		e.logger.Printf("Found %d files in site structure", len(fileInfos))
 	} else {
 		// Basic directory mode: sort files by name
 		e.logger.Println("Using basic directory mode, sorting files by name")
-		files, err = GetMarkdownFilesInDir(inputDir)
+		files, err := GetMarkdownFilesInDir(inputDir)
 		if err != nil {
 			e.logger.Printf("Error getting markdown files: %s", err)
 			return err
 		}
 		e.logger.Printf("Found %d markdown files in directory", len(files))
+		
+		// Convert to FileInfoList with level 0 (all at top level)
+		fileInfos = make(sitereader.FileInfoList, len(files))
+		for i, file := range files {
+			fileInfos[i] = sitereader.FileInfo{Path: file, NavLevel: 0}
+		}
 	}
 
-	if len(files) == 0 {
+	if len(fileInfos) == 0 {
 		e.logger.Printf("Error: no markdown files found in directory: %s", inputDir)
 		return fmt.Errorf("no markdown files found in directory: %s", inputDir)
 	}
 
 	// If there's only one file, export directly
-	if len(files) == 1 {
-		e.logger.Printf("Only one file found, exporting directly: %s", files[0])
-		return e.ExportFile(files[0], output, options)
+	if len(fileInfos) == 1 {
+		e.logger.Printf("Only one file found, exporting directly: %s", fileInfos[0].Path)
+		return e.ExportFile(fileInfos[0].Path, output, options)
 	}
 
 	// Merge multiple files
-	e.logger.Printf("Merging %d files...", len(files))
+	e.logger.Printf("Merging %d files...", len(fileInfos))
 	merger := &Merger{
 		ShiftHeadingLevelBy: options.ShiftHeadingLevelBy,
 		FileAsTitle:         options.FileAsTitle,
@@ -223,9 +229,9 @@ func (e *DefaultExporter) ExportDirectory(inputDir, output string, options Expor
 	defer os.Remove(tempFilePath)
 	e.logger.Printf("Temporary file created: %s", tempFilePath)
 
-	// Merge files
-	e.logger.Println("Merging files...")
-	if err := merger.Merge(files, tempFilePath); err != nil {
+	// Merge files using the new method that handles navigation levels
+	e.logger.Println("Merging files with navigation level awareness...")
+	if err := merger.MergeWithLevels(fileInfos, tempFilePath); err != nil {
 		e.logger.Printf("Error merging files: %s", err)
 		return fmt.Errorf("failed to merge files: %s", err)
 	}
