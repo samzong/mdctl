@@ -32,6 +32,7 @@ mdctl llmstxt [flags] <url>
 - `<url>`：sitemap.xml 的 URL (必填参数)
 - `-i, --include-path`：包含的路径模式，支持 glob 语法 (可多次指定)
 - `-e, --exclude-path`：排除的路径模式，支持 glob 语法 (可多次指定)
+- `--ignore`：忽略的路径模式，支持 glob 语法 (可多次指定，与 exclude-path 功能相同)
 - `-o, --output`：输出文件路径 (默认：标准输出)
 - `-f, --full`：启用全文模式，提取页面正文内容 (默认：false)
 - `-c, --concurrency`：并发请求数量 (默认：5)
@@ -52,6 +53,9 @@ mdctl llmstxt https://example.com/sitemap.xml -o llms.txt
 
 # 排除特定路径
 mdctl llmstxt https://example.com/sitemap.xml -e "**/blog/**" -e "**/privacy**"
+
+# 使用 ignore 模式过滤不需要的页面 (与 exclude-path 功能相同)
+mdctl llmstxt https://example.com/sitemap.xml --ignore "**/admin/**" --ignore "**/private/**"
 
 # 只包含特定路径
 mdctl llmstxt https://example.com/sitemap.xml -i "**/docs/**"
