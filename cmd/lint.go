@@ -77,6 +77,11 @@ Examples:
 		// Expand file patterns
 		var files []string
 		for _, arg := range args {
+			// Basic security validation - prevent path traversal
+			if strings.Contains(arg, "..") {
+				return fmt.Errorf("path traversal not allowed: %s", arg)
+			}
+
 			matches, err := filepath.Glob(arg)
 			if err != nil {
 				return fmt.Errorf("invalid file pattern %s: %v", arg, err)

@@ -2,6 +2,7 @@ package linter
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -80,6 +81,14 @@ func New(config *Config) *Linter {
 
 // LintFile lints a single markdown file
 func (l *Linter) LintFile(filename string) (*Result, error) {
+	// Check file size limit (10MB)
+	const maxFileSize = 10 * 1024 * 1024
+	if info, err := os.Stat(filename); err == nil {
+		if info.Size() > maxFileSize {
+			return nil, fmt.Errorf("file too large: %s (max %d bytes)", filename, maxFileSize)
+		}
+	}
+
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %v", err)
@@ -108,8 +117,13 @@ func (l *Linter) LintContent(filename, content string) (*Result, error) {
 		fixedContent, fixedCount := l.applyFixes(content, result.Issues)
 		result.FixedCount = fixedCount
 
-		// Write fixed content back to file
+		// Write fixed content back to file with backup
 		if fixedCount > 0 {
+			// Create backup before modifying the file
+			if err := l.createBackup(filename); err != nil {
+				return nil, fmt.Errorf("failed to create backup: %v", err)
+			}
+
 			if err := os.WriteFile(filename, []byte(fixedContent), 0644); err != nil {
 				return nil, fmt.Errorf("failed to write fixed content: %v", err)
 			}
@@ -140,6 +154,33 @@ func (l *Linter) applyFixes(content string, issues []*Issue) (string, int) {
 	}
 
 	return finalContent, fixedCount
+}
+
+// createBackup creates a backup of the file before modification
+func (l *Linter) createBackup(filename string) error {
+	backupFilename := filename + ".orig"
+
+	// Open source file
+	src, err := os.Open(filename)
+	if err != nil {
+		return fmt.Errorf("failed to open source file: %v", err)
+	}
+	defer src.Close()
+
+	// Create backup file
+	dst, err := os.Create(backupFilename)
+	if err != nil {
+		return fmt.Errorf("failed to create backup file: %v", err)
+	}
+	defer dst.Close()
+
+	// Copy content
+	_, err = io.Copy(dst, src)
+	if err != nil {
+		return fmt.Errorf("failed to copy content to backup: %v", err)
+	}
+
+	return nil
 }
 
 // countFixableIssues counts how many issues can be automatically fixed

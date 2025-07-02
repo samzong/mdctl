@@ -288,14 +288,20 @@ func (r *MD013) Check(lines []string) []*Issue {
 // MD018: No space after hash on atx style heading
 type MD018 struct {
 	BaseRule
+	pattern *regexp.Regexp
 }
 
 func (r *MD018) Check(lines []string) []*Issue {
 	var issues []*Issue
 
+	// Initialize pattern if not already done
+	if r.pattern == nil {
+		r.pattern = regexp.MustCompile(`^#+[^# ]`)
+	}
+
 	for i, line := range lines {
 		line = strings.TrimSpace(line)
-		if match, _ := regexp.MatchString(`^#+[^# ]`, line); match {
+		if r.pattern.MatchString(line) {
 			issues = append(issues, &Issue{
 				Line:    i + 1,
 				Rule:    r.ID(),
@@ -311,14 +317,20 @@ func (r *MD018) Check(lines []string) []*Issue {
 // MD019: Multiple spaces after hash on atx style heading
 type MD019 struct {
 	BaseRule
+	pattern *regexp.Regexp
 }
 
 func (r *MD019) Check(lines []string) []*Issue {
 	var issues []*Issue
 
+	// Initialize pattern if not already done
+	if r.pattern == nil {
+		r.pattern = regexp.MustCompile(`^#+  +`)
+	}
+
 	for i, line := range lines {
 		line = strings.TrimSpace(line)
-		if match, _ := regexp.MatchString(`^#+  +`, line); match {
+		if r.pattern.MatchString(line) {
 			issues = append(issues, &Issue{
 				Line:    i + 1,
 				Rule:    r.ID(),
@@ -334,13 +346,19 @@ func (r *MD019) Check(lines []string) []*Issue {
 // MD023: Headings must start at the beginning of the line
 type MD023 struct {
 	BaseRule
+	pattern *regexp.Regexp
 }
 
 func (r *MD023) Check(lines []string) []*Issue {
 	var issues []*Issue
 
+	// Initialize pattern if not already done
+	if r.pattern == nil {
+		r.pattern = regexp.MustCompile(`^ +#`)
+	}
+
 	for i, line := range lines {
-		if match, _ := regexp.MatchString(`^ +#`, line); match {
+		if r.pattern.MatchString(line) {
 			issues = append(issues, &Issue{
 				Line:    i + 1,
 				Rule:    r.ID(),
@@ -356,22 +374,50 @@ func (r *MD023) Check(lines []string) []*Issue {
 // MD032: Lists should be surrounded by blank lines
 type MD032 struct {
 	BaseRule
+	pattern *regexp.Regexp
 }
 
 func (r *MD032) Check(lines []string) []*Issue {
 	var issues []*Issue
 
+	// Initialize pattern if not already done
+	if r.pattern == nil {
+		r.pattern = regexp.MustCompile(`^[*+-] `)
+	}
+
 	for i, line := range lines {
 		line = strings.TrimSpace(line)
-		if match, _ := regexp.MatchString(`^[*+-] `, line); match {
+		if r.pattern.MatchString(line) {
 			// Check if previous line is not blank (and not start of file)
-			if i > 0 && strings.TrimSpace(lines[i-1]) != "" {
-				issues = append(issues, &Issue{
-					Line:    i + 1,
-					Rule:    r.ID(),
-					Message: "Lists should be surrounded by blank lines",
-					Context: line,
-				})
+			// and previous line is not also a list item
+			if i > 0 {
+				prevLine := strings.TrimSpace(lines[i-1])
+				if prevLine != "" && !r.pattern.MatchString(prevLine) {
+					issues = append(issues, &Issue{
+						Line:    i + 1,
+						Rule:    r.ID(),
+						Message: "Lists should be surrounded by blank lines (missing blank line before list)",
+						Context: line,
+					})
+				}
+			}
+
+			// Check if this is the end of a list (next line exists, is not blank, and is not a list item)
+			if i < len(lines)-1 {
+				nextLine := strings.TrimSpace(lines[i+1])
+				// Only check if next line exists and is not empty
+				if nextLine != "" {
+					nextIsListItem := r.pattern.MatchString(nextLine)
+					// If next line is not a list item, this is the end of the list
+					if !nextIsListItem {
+						issues = append(issues, &Issue{
+							Line:    i + 2, // Next line number
+							Rule:    r.ID(),
+							Message: "Lists should be surrounded by blank lines (missing blank line after list)",
+							Context: nextLine,
+						})
+					}
+				}
 			}
 		}
 	}
@@ -387,15 +433,27 @@ type MD047 struct {
 func (r *MD047) Check(lines []string) []*Issue {
 	var issues []*Issue
 
-	if len(lines) > 0 {
-		lastLine := lines[len(lines)-1]
-		if lastLine != "" {
-			issues = append(issues, &Issue{
-				Line:    len(lines),
-				Rule:    r.ID(),
-				Message: "Files should end with a single newline character",
-			})
-		}
+	if len(lines) == 0 {
+		return issues // Empty file is fine (no content to check)
+	}
+
+	// Check for files not ending with a newline
+	lastLine := lines[len(lines)-1]
+	if lastLine != "" {
+		issues = append(issues, &Issue{
+			Line:    len(lines),
+			Rule:    r.ID(),
+			Message: "Files should end with a single newline character",
+		})
+	}
+
+	// Check for files ending with multiple newlines
+	if len(lines) >= 2 && lines[len(lines)-1] == "" && lines[len(lines)-2] == "" {
+		issues = append(issues, &Issue{
+			Line:    len(lines) - 1,
+			Rule:    r.ID(),
+			Message: "Files should end with a single newline character (multiple trailing newlines found)",
+		})
 	}
 
 	return issues
