@@ -40,13 +40,28 @@ type Linter struct {
 	config    *Config
 	rules     *RuleSet
 	formatter *markdownfmt.Formatter
+	fixer     *Fixer
 }
 
 // New creates a new linter instance
 func New(config *Config) *Linter {
 	rules := NewRuleSet()
 	
-	// Apply rule configuration
+	// Load configuration file if specified
+	if config.RulesFile != "" {
+		if configFile, err := LoadConfigFile(config.RulesFile); err == nil {
+			configFile.ApplyToRuleSet(rules)
+		} else if config.Verbose {
+			fmt.Printf("Warning: Could not load rules file %s: %v\n", config.RulesFile, err)
+		}
+	} else {
+		// Try to find and load default config file
+		if configFile, err := LoadConfigFile(""); err == nil {
+			configFile.ApplyToRuleSet(rules)
+		}
+	}
+	
+	// Apply rule configuration from command line
 	if len(config.EnableRules) > 0 {
 		rules.EnableOnly(config.EnableRules)
 	}
@@ -55,17 +70,11 @@ func New(config *Config) *Linter {
 		rules.Disable(config.DisableRules)
 	}
 
-	// Load custom rules from file if specified
-	if config.RulesFile != "" {
-		if err := rules.LoadFromFile(config.RulesFile); err != nil && config.Verbose {
-			fmt.Printf("Warning: Could not load rules file %s: %v\n", config.RulesFile, err)
-		}
-	}
-
 	return &Linter{
 		config:    config,
 		rules:     rules,
 		formatter: markdownfmt.New(true), // Enable formatter for auto-fix
+		fixer:     NewFixer(),
 	}
 }
 
@@ -119,15 +128,18 @@ func (l *Linter) LintContent(filename, content string) (*Result, error) {
 
 // applyFixes applies automatic fixes to the content
 func (l *Linter) applyFixes(content string, issues []*Issue) (string, int) {
-	// Use the existing formatter for basic fixes
-	fixedContent := l.formatter.Format(content)
+	// Use the dedicated fixer for rule-specific fixes
+	fixedContent, fixedCount := l.fixer.ApplyFixes(content, issues)
 	
-	fixedCount := 0
-	if fixedContent != content {
+	// Then apply general formatting fixes
+	finalContent := l.formatter.Format(fixedContent)
+	
+	// If formatter made additional changes, count them
+	if finalContent != fixedContent && fixedCount == 0 {
 		fixedCount = l.countFixableIssues(issues)
 	}
 
-	return fixedContent, fixedCount
+	return finalContent, fixedCount
 }
 
 // countFixableIssues counts how many issues can be automatically fixed

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,12 +12,14 @@ import (
 )
 
 var (
-	autoFix     bool
-	configRules []string
-	outputFormat string
-	rulesFile   string
-	enableRules []string
-	disableRules []string
+	autoFix       bool
+	configRules   []string
+	outputFormat  string
+	rulesFile     string
+	enableRules   []string
+	disableRules  []string
+	initConfig    bool
+	configOutput  string
 )
 
 var lintCmd = &cobra.Command{
@@ -44,8 +47,29 @@ Examples:
   mdctl lint --enable MD001,MD003 README.md
 
   # Disable specific rules
-  mdctl lint --disable MD013,MD033 README.md`,
+  mdctl lint --disable MD013,MD033 README.md
+
+  # Create a default configuration file
+  mdctl lint --init
+
+  # Create a configuration file with custom name
+  mdctl lint --init --init-config my-rules.json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Handle config initialization
+		if initConfig {
+			configFile := configOutput
+			if configFile == "" {
+				configFile = ".markdownlint.json"
+			}
+			
+			if err := linter.CreateDefaultConfig(configFile); err != nil {
+				return fmt.Errorf("failed to create config file: %v", err)
+			}
+			
+			fmt.Printf("Created markdownlint configuration file: %s\n", configFile)
+			return nil
+		}
+		
 		if len(args) == 0 {
 			return fmt.Errorf("at least one markdown file must be specified")
 		}
@@ -179,14 +203,32 @@ func displayDefaultResults(filename string, result *linter.Result, config *linte
 }
 
 func displayJSONResults(filename string, result *linter.Result) error {
-	// TODO: Implement JSON output format
-	fmt.Printf("JSON output not yet implemented\n")
+	output := map[string]interface{}{
+		"filename":    result.Filename,
+		"issues":      result.Issues,
+		"fixed_count": result.FixedCount,
+	}
+	
+	data, err := json.MarshalIndent(output, "", "  ")
+	if err != nil {
+		return err
+	}
+	
+	fmt.Println(string(data))
 	return nil
 }
 
 func displayGitHubResults(filename string, result *linter.Result) error {
-	// TODO: Implement GitHub Actions output format
-	fmt.Printf("GitHub Actions output not yet implemented\n")
+	// GitHub Actions workflow commands format
+	for _, issue := range result.Issues {
+		level := "error"
+		if issue.Fixed {
+			level = "notice"
+		}
+		
+		fmt.Printf("::%s file=%s,line=%d::%s (%s)\n", 
+			level, filename, issue.Line, issue.Message, issue.Rule)
+	}
 	return nil
 }
 
@@ -196,6 +238,8 @@ func init() {
 	lintCmd.Flags().StringVar(&rulesFile, "config", "", "Path to markdownlint configuration file")
 	lintCmd.Flags().StringSliceVar(&enableRules, "enable", []string{}, "Enable specific rules (comma-separated)")
 	lintCmd.Flags().StringSliceVar(&disableRules, "disable", []string{}, "Disable specific rules (comma-separated)")
+	lintCmd.Flags().BoolVar(&initConfig, "init", false, "Create a default .markdownlint.json configuration file")
+	lintCmd.Flags().StringVar(&configOutput, "init-config", "", "Path for the configuration file when using --init (default: .markdownlint.json)")
 
 	lintCmd.GroupID = "core"
 }
