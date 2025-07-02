@@ -8,14 +8,32 @@ import (
 	"path/filepath"
 )
 
+// FileInfo represents a file with its navigation level information
+type FileInfo struct {
+	Path     string // File path
+	NavLevel int    // Navigation level (0-based, 0 means top level)
+}
+
+// FileInfoList is a list of FileInfo
+type FileInfoList []FileInfo
+
+// ToFilePaths converts FileInfoList to a simple list of file paths
+func (list FileInfoList) ToFilePaths() []string {
+	paths := make([]string, len(list))
+	for i, info := range list {
+		paths[i] = info.Path
+	}
+	return paths
+}
+
 // SiteReader Define Site Reader Interface
 type SiteReader interface {
 	// Detect if given directory is this type of site
 	Detect(dir string) bool
 
-	// Read site structure, return sorted list of files
+	// Read site structure, return sorted list of files with navigation level information  
 	// navPath parameter is used to specify the navigation path to export, empty to export all
-	ReadStructure(dir string, configPath string, navPath string) ([]string, error)
+	ReadStructure(dir string, configPath string, navPath string) (FileInfoList, error)
 }
 
 // GetSiteReader Return the appropriate reader based on site type

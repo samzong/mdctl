@@ -11,6 +11,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/samzong/mdctl/internal/exporter/sitereader"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
 )
@@ -26,7 +27,128 @@ type Merger struct {
 	Verbose bool
 }
 
-// Merge Merge multiple Markdown files into a single target file
+// MergeWithLevels Merge multiple Markdown files with navigation level-aware heading adjustment
+func (m *Merger) MergeWithLevels(fileInfos sitereader.FileInfoList, target string) error {
+	// If no logger is provided, create a default one
+	if m.Logger == nil {
+		if m.Verbose {
+			m.Logger = log.New(os.Stdout, "[MERGER] ", log.LstdFlags)
+		} else {
+			m.Logger = log.New(io.Discard, "", 0)
+		}
+	}
+
+	if len(fileInfos) == 0 {
+		m.Logger.Println("Error: no source files provided")
+		return fmt.Errorf("no source files provided")
+	}
+
+	m.Logger.Printf("Merging %d files with navigation levels into: %s", len(fileInfos), target)
+	var mergedContent strings.Builder
+
+	// Initialize source directory list
+	m.SourceDirs = make([]string, 0, len(fileInfos))
+	sourceDirsMap := make(map[string]bool) // Used for deduplication
+
+	// Process each source file
+	for i, fileInfo := range fileInfos {
+		source := fileInfo.Path
+		navLevel := fileInfo.NavLevel
+		m.Logger.Printf("Processing file %d/%d: %s (nav level: %d)", i+1, len(fileInfos), source, navLevel)
+
+		// Get source file's directory and add to list (deduplication)
+		sourceDir := filepath.Dir(source)
+		if !sourceDirsMap[sourceDir] {
+			sourceDirsMap[sourceDir] = true
+			m.SourceDirs = append(m.SourceDirs, sourceDir)
+		}
+
+		// Read file content
+		content, err := os.ReadFile(source)
+		if err != nil {
+			m.Logger.Printf("Error reading file %s: %s", source, err)
+			return fmt.Errorf("failed to read file %s: %s", source, err)
+		}
+
+		// Process content
+		processedContent := string(content)
+
+		// Ensure content is valid UTF-8
+		if !utf8.ValidString(processedContent) {
+			m.Logger.Printf("File %s contains invalid UTF-8, attempting to convert from GBK", source)
+			// Attempt to convert content from GBK to UTF-8
+			reader := transform.NewReader(bytes.NewReader(content), simplifiedchinese.GBK.NewDecoder())
+			decodedContent, err := io.ReadAll(reader)
+			if err != nil {
+				m.Logger.Printf("Failed to decode content from file %s: %s", source, err)
+				return fmt.Errorf("failed to decode content from file %s: %s", source, err)
+			}
+			processedContent = string(decodedContent)
+			m.Logger.Printf("Successfully converted content from GBK to UTF-8")
+		}
+
+		// Remove YAML front matter
+		m.Logger.Println("Removing YAML front matter...")
+		processedContent = removeYAMLFrontMatter(processedContent)
+
+		// Process image paths
+		m.Logger.Println("Processing image paths...")
+		processedContent, err = processImagePaths(processedContent, source, m.Logger, m.Verbose)
+		if err != nil {
+			m.Logger.Printf("Error processing image paths: %s", err)
+			return fmt.Errorf("failed to process image paths: %s", err)
+		}
+
+		// Calculate effective heading level shift
+		// navLevel represents the navigation depth, so we shift headings accordingly
+		// Also add the global shift from options
+		effectiveShift := navLevel + m.ShiftHeadingLevelBy
+		
+		// Adjust heading levels based on navigation level
+		if effectiveShift != 0 {
+			m.Logger.Printf("Shifting heading levels by %d (nav level: %d + global shift: %d)", 
+				effectiveShift, navLevel, m.ShiftHeadingLevelBy)
+			processedContent = ShiftHeadings(processedContent, effectiveShift)
+		}
+
+		// Add filename as title
+		if m.FileAsTitle {
+			filename := filepath.Base(source)
+			m.Logger.Printf("Adding filename as title: %s", filename)
+			// Title level should be based on navigation level
+			titleLevel := navLevel + 1 + m.ShiftHeadingLevelBy
+			processedContent = AddTitleFromFilename(processedContent, filename, titleLevel)
+		}
+
+		// Add to merged content
+		m.Logger.Printf("Adding processed content to merged result (length: %d bytes)", len(processedContent))
+		mergedContent.WriteString(processedContent)
+
+		// If not the last file, add separator
+		if i < len(fileInfos)-1 {
+			mergedContent.WriteString("\n\n")
+		}
+	}
+
+	// Final content
+	finalContent := mergedContent.String()
+
+	// Check again for any YAML-related issues
+	m.Logger.Println("Sanitizing final content...")
+	finalContent = sanitizeContent(finalContent)
+
+	// Write target file, ensuring UTF-8 encoding
+	m.Logger.Printf("Writing merged content to target file: %s (size: %d bytes)", target, len(finalContent))
+	err := os.WriteFile(target, []byte(finalContent), 0644)
+	if err != nil {
+		m.Logger.Printf("Error writing merged content: %s", err)
+		return fmt.Errorf("failed to write merged content to %s: %s", target, err)
+	}
+
+	m.Logger.Printf("Successfully merged %d files into: %s", len(fileInfos), target)
+	return nil
+}
+
 func (m *Merger) Merge(sources []string, target string) error {
 	// If no logger is provided, create a default one
 	if m.Logger == nil {
