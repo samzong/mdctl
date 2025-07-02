@@ -36,6 +36,8 @@ func init() {
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(uploadCmd)
 	rootCmd.AddCommand(exportCmd)
+	rootCmd.AddCommand(llmstxtCmd)
+	rootCmd.AddCommand(lintCmd)
 
 	// Add global flags
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
@@ -56,5 +58,7 @@ func init() {
 	downloadCmd.GroupID = "core"
 	uploadCmd.GroupID = "core"
 	exportCmd.GroupID = "core"
+	llmstxtCmd.GroupID = "core"
+	lintCmd.GroupID = "core"
 	configCmd.GroupID = "config"
 }
