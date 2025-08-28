@@ -90,6 +90,27 @@ mdctl llmstxt https://example.com/sitemap.xml > llms.txt
 mdctl llmstxt -f https://example.com/sitemap.xml > llms-full.txt
 ```
 
+### GitHub Action
+
+Use mdctl in your CI with the Docker-based Action in this repo. Example workflow step:
+
+```yaml
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export docs to DOCX
+        uses: samzong/mdctl@v1
+        with:
+          args: "export -f README.md -o output.docx"
+```
+
+Notes:
+- Set `with.args` to any mdctl command and flags (e.g., `download`, `translate`, `upload`, `export`, `llmstxt`).
+- Provide necessary credentials via `env` when using cloud features (e.g., S3 for `upload`).
+- You can set `working-directory` on the step if needed.
+
 ## Developer's Guide
 
 If you are interested in contributing, please refer to the [DEVELOPMENT.md](docs/DEVELOPMENT.md) file for a complete technical architecture, component design, and development guide.

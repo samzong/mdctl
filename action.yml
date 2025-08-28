@@ -1,0 +1,21 @@
+name: "mdctl CLI"
+description: "Run mdctl (Markdown docs toolkit) in GitHub Actions via Docker."
+author: "samzong"
+branding:
+  icon: "book"
+  color: "blue"
+
+inputs:
+  args:
+    description: "Arguments to pass to mdctl (e.g., \"export -f README.md -o out.docx\")."
+    required: false
+    default: "--help"
+
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  entrypoint: "/bin/sh"
+  args:
+    - -c
+    - mdctl ${{ inputs.args }}
+
