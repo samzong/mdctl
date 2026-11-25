@@ -42,12 +42,4 @@ jobs:
           version: "~> v2"
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
-      
-      - name: Trigger Homebrew Update
-        if: success()
-        uses: peter-evans/repository-dispatch@v2
-        with:
-          token: ${{ secrets.GH_PAT }}
-          event-type: trigger-homebrew-update
-          client-payload: '{"version": "${{ env.VERSION }}"}'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
